@@ -35,6 +35,15 @@ module ParserTest =
                           ColumnSummary = None
                           ColumnJpName = None } ]
 
+    [<Test>]
+    let ``one alias def with attribute`` () =
+      "coltype nvarchar = { nvarchar with collate = Japanese_BIN }"
+      |> parse
+      |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "nvarchar"; TypeParameters = [] }, builtin0 "nvarchar")
+                          ColumnAttributes = [ ComplexAttr ("collate", { Value = "Japanese_BIN" }) ]
+                          ColumnSummary = None
+                          ColumnJpName = None } ]
+
   module TableDef =
     let parse input =
       Parser.parse input

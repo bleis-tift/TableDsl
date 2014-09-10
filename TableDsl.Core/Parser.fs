@@ -154,7 +154,7 @@ module Parser =
  
     let pAliasDef name typeParams = parse {
       let! body, attrs = pClosedTypeRef
-      return AliasDef ({ TypeName = name; TypeParameters = typeParams }, body.Type)
+      return (AliasDef ({ TypeName = name; TypeParameters = typeParams }, body.Type), attrs)
     }
 
     let pEnumTypeDef name = parse {
@@ -171,8 +171,8 @@ module Parser =
       let colTypeParams = match colTypeParams with Some x -> x | _ -> []
       let! colTypeJpName = pJpName |> attempt |> opt
       do! pSkipToken "="
-      let! t = pTypeDef colTypeName colTypeParams
-      return ColTypeDef { ColumnSummary = colTypeSummary; ColumnTypeDef = t; ColumnJpName = colTypeJpName; ColumnAttributes = [] }
+      let! typ, attrs = pTypeDef colTypeName colTypeParams
+      return ColTypeDef { ColumnSummary = colTypeSummary; ColumnTypeDef = typ; ColumnJpName = colTypeJpName; ColumnAttributes = attrs }
     }
 
     let pColumnDef = parse {
