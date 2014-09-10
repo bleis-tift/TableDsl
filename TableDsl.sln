@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30723.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TableDsl", "TableDsl\TableDsl.fsproj", "{8C1241AF-0D90-476E-A6DE-5D045DAB1F42}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TableDsl.Core", "TableDsl.Core\TableDsl.Core.fsproj", "{65C1E66D-89D5-4421-A22E-682027B37ACB}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TableDsl.Core.Tests", "TableDsl.Core.Tests\TableDsl.Core.Tests.fsproj", "{06DDA71C-F0EF-4BFF-8007-04E932A71EF4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8C1241AF-0D90-476E-A6DE-5D045DAB1F42}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C1241AF-0D90-476E-A6DE-5D045DAB1F42}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C1241AF-0D90-476E-A6DE-5D045DAB1F42}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C1241AF-0D90-476E-A6DE-5D045DAB1F42}.Release|Any CPU.Build.0 = Release|Any CPU
+		{65C1E66D-89D5-4421-A22E-682027B37ACB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{65C1E66D-89D5-4421-A22E-682027B37ACB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{65C1E66D-89D5-4421-A22E-682027B37ACB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{65C1E66D-89D5-4421-A22E-682027B37ACB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{06DDA71C-F0EF-4BFF-8007-04E932A71EF4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{06DDA71C-F0EF-4BFF-8007-04E932A71EF4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{06DDA71C-F0EF-4BFF-8007-04E932A71EF4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{06DDA71C-F0EF-4BFF-8007-04E932A71EF4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
