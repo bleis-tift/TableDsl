@@ -44,6 +44,18 @@ module ParserTest =
                           ColumnSummary = None
                           ColumnJpName = None } ]
 
+    [<Test>]
+    let ``summary and jp name`` () =
+      """
+      /// 名前を表します。
+      coltype Name[名前] = { nvarchar with collate = Japanese_BIN }
+      """
+      |> parse
+      |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "Name"; TypeParameters = [] }, builtin0 "nvarchar")
+                          ColumnAttributes = [ ComplexAttr ("collate", { Value = "Japanese_BIN" }) ]
+                          ColumnSummary = Some "名前を表します。"
+                          ColumnJpName = Some "名前" } ]
+
   module TableDef =
     let parse input =
       Parser.parse input
@@ -220,28 +232,28 @@ module ParserTest =
            ]
 
     [<Test>]
-    let ``summary`` () =
+    let ``summary and jp name`` () =
       """
       /// ユーザテーブル
       /// ユーザを表す。
-      table Users = {
+      table Users[ユーザテーブル] = {
         /// ID
-        Id: int
+        Id[ID]: int
         /// ユーザ名
-        Name: nvarchar(16)
+        Name[名前]: nvarchar(16)
       }
       """
       |> parse
       |> should equal
            [ { TableSummary = Some "ユーザテーブル\nユーザを表す。"
                TableName = "Users"
-               TableJpName = None
+               TableJpName = Some "ユーザテーブル"
                ColumnDefs =
                  [ { ColumnSummary = Some "ID"
-                     ColumnName = ColumnName ("Id", None)
+                     ColumnName = ColumnName ("Id", Some "ID")
                      ColumnType = ({ Type = builtin0 "int"; TypeParameters = [] }, []) }
                    { ColumnSummary = Some "ユーザ名"
-                     ColumnName = ColumnName ("Name", None)
+                     ColumnName = ColumnName ("Name", Some "名前")
                      ColumnType = ({ Type = builtin1 "nvarchar" "@1"; TypeParameters = [ "16" ] }, []) } ]
              }
            ]
