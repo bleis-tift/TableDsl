@@ -88,24 +88,23 @@ module Parser =
       return elem
     }
 
-    let rec pNonQuotedTypeParamElem read = parse {
-      let! ch = noneOf ")" |> attempt |> opt
-      let! elem =
-        match ch with
-        | Some '(' ->
-            parse {
-              let! inner = pNonQuotedTypeParamElem (read + "(")
-              let! rest = noneOf ")" |> manyChars
-              let! close = pchar ')'
-              return inner + rest + ")" }
-        | Some ch ->
-            pNonQuotedTypeParamElem (read + string ch)
-        | None ->
-            preturn read
-      return elem 
-    }
+    let pNonQuotedTypeParamElem =
+      let rec pNonQuotedTypeParamElem terminators : Parser<string> =
+        let p = parse {
+          let! ch = anyChar
+          return!
+            match ch with
+            | '(' -> parse {
+                       let! result = pNonQuotedTypeParamElem [')']
+                       do! pchar ')' |>> ignore
+                       return "(" + result + ")" }
+            | x when List.exists ((=)x) terminators -> pzero
+            | x -> preturn (string x)
+        }
+        many (attempt p) |>> (fun xs -> System.String.Concat(xs))
+      pNonQuotedTypeParamElem [','; ')']
 
-    let pTypeParamElem = pQuotedTypeParamElem <|> pNonQuotedTypeParamElem ""
+    let pTypeParamElem = (pQuotedTypeParamElem <|> pNonQuotedTypeParamElem) >>= (function "" -> pzero | other -> preturn other)
 
     let pTypeParam =
       sepBy pTypeParamElem (pchar ',') |> between (pchar '(') (pchar ')')

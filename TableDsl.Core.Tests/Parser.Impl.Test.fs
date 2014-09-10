@@ -11,9 +11,12 @@ module ParserImplTest =
   open TableDsl.Parser.Impl
 
   [<TestCase("()")>]
+  [<TestCase("((()()))")>]
+  [<TestCase("((xxxx()yyyy()))")>]
   [<TestCase("hoge(piyo(foo(bar)))")>]
   [<TestCase("hoge((piyo + foo) * bar)")>]
+  [<TestCase("hoge(piyo, foo, bar)")>]
   let test_pNonQuotedTypeParamElem str =
-    str |> tryParse' (pNonQuotedTypeParamElem "")
+    str |> tryParse' pNonQuotedTypeParamElem
     |> function Success s -> s | Failure f -> failwithf "failure: %A" f
     |> should equal str
