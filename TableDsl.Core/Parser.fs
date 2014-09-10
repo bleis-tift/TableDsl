@@ -88,12 +88,6 @@ module Parser =
       return elem
     }
 
-    // TODO : 閉じカッコの後(前？)に何か来た時に対応していない気がする
-    // テストケース:
-    //  * ()
-    //  * ((()()))
-    //  * hoge(piyo(foo(bar)))
-    //  * hoge((piyo + foo) * bar)
     let rec pNonQuotedTypeParamElem read = parse {
       let! ch = noneOf ")" |> attempt |> opt
       let! elem =
@@ -101,8 +95,9 @@ module Parser =
         | Some '(' ->
             parse {
               let! inner = pNonQuotedTypeParamElem (read + "(")
+              let! rest = noneOf ")" |> manyChars
               let! close = pchar ')'
-              return inner + ")" }
+              return inner + rest + ")" }
         | Some ch ->
             pNonQuotedTypeParamElem (read + string ch)
         | None ->
@@ -222,7 +217,7 @@ module Parser =
       ]
     collectMessages' pos state msg
 
-  let tryParse input =
+  let tryParse' parser input =
     let err2err (err: ParserError) =
       let pos = { Line = err.Position.Line; Column = err.Position.Column }
       let state =
@@ -233,9 +228,11 @@ module Parser =
       | [] -> FParsecDefaultMessage (sprintf "%A" err)
       | notEmpty -> UserFriendlyMessages notEmpty
 
-    match CharParsers.runParserOnString Impl.parser Impl.initialState "" input with
+    match CharParsers.runParserOnString parser Impl.initialState "" input with
     | Success (res, _, _) -> Basis.Core.Success res
     | Failure (_, err, _) -> Basis.Core.Failure (err2err err)
+
+  let tryParse input = tryParse' Impl.parser input
  
   let parse input =
     match tryParse input with
