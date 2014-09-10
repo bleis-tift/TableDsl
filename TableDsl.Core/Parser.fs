@@ -66,7 +66,7 @@ module Parser =
     }
  
     let pSummary = (attempt pSummaryLine) |> many1 |>> fun lines -> System.String.Join("\n", lines)
- 
+
     let pTableName = pName
     let pColName = pName
  
@@ -80,6 +80,8 @@ module Parser =
     let trimSpace p =
       let ws = many (pchar ' ' <|> pchar '\t')
       ws >>. p .>> ws
+
+    let pColTypeDef = pzero
 
     let pQuotedTypeParamElem = parse {
       do! pSkipToken "`"
@@ -172,10 +174,10 @@ module Parser =
       do! pSkipToken "=" >>. pSkipToken "{"
       let! colDefs = sepEndBy (attempt pColumnDef) (newline |>> ignore)
       do! pSkipToken "}"
-      return { TableSummary = tableSummary; TableName = tableName; TableJpName = tableJpName; ColumnDefs = colDefs }
+      return TableDef { TableSummary = tableSummary; TableName = tableName; TableJpName = tableJpName; ColumnDefs = colDefs }
     }
  
-    let parser = many pTableDef
+    let parser = many (attempt pColTypeDef <|> pTableDef)
 
   type Position = {
     Line: int64

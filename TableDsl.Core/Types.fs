@@ -74,3 +74,8 @@ type TableDef = {
   TableJpName: string option
   ColumnDefs: ColumnDef list
 }
+
+type Element =
+  | TableDef of TableDef
+  | ColTypeDef of TypeDef
+  //| Comment of string
