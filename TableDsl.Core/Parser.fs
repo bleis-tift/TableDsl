@@ -12,7 +12,7 @@ module Parser =
         let typeVar i =
           TypeVariable ("@" + string (i + 1))
         [ for i in 0..paramCount ->
-            (name, i, BuiltinType { ColumnTypeName = name; TypeParameters = List.init i typeVar }) ]
+            (name, i, BuiltinType { TypeName = name; TypeParameters = List.init i typeVar }) ]
       [ builtin "bigint" 0
         builtin "int" 0
         builtin "smallint" 0
@@ -47,7 +47,7 @@ module Parser =
         builtin "xml" 1
         builtin "geography" 0
         builtin "geometry" 0
-        [("nullable", 1, BuiltinType { ColumnTypeName = "nullable"; TypeParameters = [TypeVariable "@type"] })]
+        [("nullable", 1, BuiltinType { TypeName = "nullable"; TypeParameters = [TypeVariable "@type"] })]
       ] |> List.concat
 
     type Parser<'T> = Parser<'T, State>
@@ -67,6 +67,7 @@ module Parser =
  
     let pSummary = (attempt pSummaryLine) |> many1 |>> fun lines -> System.String.Join("\n", lines)
 
+    let pColTypeName = pName
     let pTableName = pName
     let pColName = pName
  
@@ -80,8 +81,6 @@ module Parser =
     let trimSpace p =
       let ws = many (pchar ' ' <|> pchar '\t')
       ws >>. p .>> ws
-
-    let pColTypeDef = pzero
 
     let pQuotedTypeParamElem = parse {
       do! pSkipToken "`"
@@ -114,7 +113,7 @@ module Parser =
     let resolveType typeName typeParams env =
       match env |> List.tryFind (fun (name, paramCount, _) -> name = typeName && paramCount = (List.length typeParams)) with
       | Some (name, paramCount, t) ->
-          let typ = { ColumnTypeDef = t; ColumnAttributes = [] }
+          let typ = { ColumnSummary = None; ColumnTypeDef = t; ColumnJpName = None; ColumnAttributes = [] }
           typ, preturn ()
       | None -> Unchecked.defaultof<_>, failFatally (sprintf "%sという型が見つかりませんでした。" typeName)
 
@@ -153,6 +152,29 @@ module Parser =
 
     let pClosedTypeRef = pClosedTypeRefWithAttributes <|> pClosedTypeRefWithoutAttributes
  
+    let pAliasDef name typeParams = parse {
+      let! body, attrs = pClosedTypeRef
+      return AliasDef ({ TypeName = name; TypeParameters = typeParams }, body.Type)
+    }
+
+    let pEnumTypeDef name = parse {
+      return! pzero
+    }
+
+    let pTypeDef name typeParams = pEnumTypeDef name <|> pAliasDef name typeParams
+
+    let pColTypeDef = parse {
+      let! colTypeSummary = pSummary |> attempt |> opt
+      do! pSkipToken "coltype"
+      let! colTypeName = pColTypeName
+      let! colTypeParams = pzero |> attempt |> opt // TODO : 型パラメータの解析
+      let colTypeParams = match colTypeParams with Some x -> x | _ -> []
+      let! colTypeJpName = pJpName |> attempt |> opt
+      do! pSkipToken "="
+      let! t = pTypeDef colTypeName colTypeParams
+      return ColTypeDef { ColumnSummary = colTypeSummary; ColumnTypeDef = t; ColumnJpName = colTypeJpName; ColumnAttributes = [] }
+    }
+
     let pColumnDef = parse {
       let! colSummary = pSummary |> attempt |> opt
       do! many (choice [pchar ' '; pchar '\t']) |>> ignore

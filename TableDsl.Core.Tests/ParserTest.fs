@@ -9,11 +9,31 @@ module ParserTest =
   open TableDsl
   open TableDsl.Parser
 
+  let builtin0 name =
+    { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [] }; ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None }
+
+  let builtin1 name _1 =
+    { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [TypeVariable _1] }; ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
+
   [<Test>]
   let ``empty string`` () =
     ""
     |> parse
     |> should equal []
+
+  module ColTypeDef =
+    let parse input =
+      Parser.parse input
+      |> List.choose (function ColTypeDef def -> Some def | _ -> None)
+
+    [<Test>]
+    let ``one simple alias def`` () =
+      "coltype Created = datetime2"
+      |> parse
+      |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "Created"; TypeParameters = [] }, builtin0 "datetime2")
+                          ColumnAttributes = []
+                          ColumnSummary = None
+                          ColumnJpName = None } ]
 
   module TableDef =
     let parse input =
@@ -23,12 +43,6 @@ module ParserTest =
     let tryParse input =
       Parser.tryParse input
       |> Result.map (List.choose (function TableDef def -> Some def | _ -> None))
-
-    let builtin0 name =
-      { ColumnTypeDef = BuiltinType { ColumnTypeName = name; TypeParameters = [] }; ColumnAttributes = [] }
-
-    let builtin1 name _1 =
-      { ColumnTypeDef = BuiltinType { ColumnTypeName = name; TypeParameters = [TypeVariable _1] }; ColumnAttributes = [] }
 
     [<Test>]
     let ``one simple table`` () =

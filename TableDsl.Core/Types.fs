@@ -6,6 +6,9 @@ type AttributeValue = {
   // 追加のフィールドはある？
 }
  
+/// サマリは単なる文字列型。
+type Summary = string
+ 
 /// 列の属性には、名前のみを持つSimpleAttrと、名前と値を持つComplexAttrがある。
 /// SimpleAttrは、フラグを意味しており、存在する場合にそのフラグがtrueであることを示す。
 type ColumnAttribute =
@@ -22,11 +25,12 @@ type OpenTypeParam =
 
 /// 非列挙型は名前と型パラメータを持つ。
 type NonEnumType = {
-  ColumnTypeName: string
+  TypeName: string
   TypeParameters: OpenTypeParam list
 }
 /// 列挙型は基本型とケースを持つ。
 and EnumType = {
+  EnumTypeName: string
   BaseType: NonEnumType
   Cases: (string * int) list
 }
@@ -39,12 +43,11 @@ and TypeDef =
 /// 列型定義は、列の型定義と列の属性を持つ。
 /// ただし、トップレベルの列の定義はBuiltinTypeにはならない(組み込み型は定義できない)。
 and ColumnTypeDef = {
+  ColumnSummary: Summary option
   ColumnTypeDef: TypeDef
+  ColumnJpName: string option
   ColumnAttributes: ColumnAttribute list
 }
- 
-/// サマリは単なる文字列型。
-type Summary = string
  
 /// 閉じた型パラメータは単なる文字列として扱う。
 type ClosedTypeParam = string
@@ -77,5 +80,5 @@ type TableDef = {
 
 type Element =
   | TableDef of TableDef
-  | ColTypeDef of TypeDef
+  | ColTypeDef of ColumnTypeDef
   //| Comment of string
