@@ -26,6 +26,10 @@ module ParserTest =
       Parser.parse input
       |> List.choose (function ColTypeDef def -> Some def | _ -> None)
 
+    let tryParse input =
+      Parser.tryParse input
+      |> Result.map (List.choose (function ColTypeDef def -> Some def | _ -> None))
+
     [<Test>]
     let ``one simple alias def`` () =
       "coltype Created = datetime2"
@@ -45,6 +49,15 @@ module ParserTest =
                           ColumnJpName = None } ]
 
     [<Test>]
+    let ``one generic alias def with attribute`` () =
+      "coltype nvarchar(@n) = { nvarchar(@n) with collate = Japanese_BIN }"
+      |> parse
+      |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "nvarchar"; TypeParameters = [TypeVariable "@n"] }, builtin1 "nvarchar" "@1")
+                          ColumnAttributes = [ ComplexAttr ("collate", { Value = "Japanese_BIN" }) ]
+                          ColumnSummary = None
+                          ColumnJpName = None } ]
+
+    [<Test>]
     let ``summary and jp name`` () =
       """
       /// 名前を表します。
@@ -55,6 +68,15 @@ module ParserTest =
                           ColumnAttributes = [ ComplexAttr ("collate", { Value = "Japanese_BIN" }) ]
                           ColumnSummary = Some "名前を表します。"
                           ColumnJpName = Some "名前" } ]
+
+    [<Test>]
+    let ``dup type variable`` () =
+      "coltype nvarchar(@n, @n) = { nvarchar(@n) with collate = Japanese_BIN }"
+      |> tryParse
+      |> function
+         | Success res -> failwithf "oops! Success! : %A" res
+         | Failure (FParsecDefaultMessage err) -> failwithf "oops! : %s" err
+         | Failure (UserFriendlyMessages errs) -> errs |> List.map (fun (_, _, msg) -> msg) |> should equal ["型nvarcharの定義で型変数@nが重複しています。"]
 
   module TableDef =
     let parse input =

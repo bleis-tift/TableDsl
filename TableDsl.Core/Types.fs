@@ -18,7 +18,7 @@ type ColumnAttribute =
 /// 開いた型パラメータは、型変数か、文字列のいずれか。
 type OpenTypeParam =
   | TypeVariable of string
-  | StringValue of string
+  | BoundValue of string
  
 // 列の型は大きく分類すると、列挙型と非列挙型に分類できる。
 // 組み込みの型は非列挙型のみとなっている。

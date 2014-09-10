@@ -163,12 +163,32 @@ module Parser =
 
     let pTypeDef name typeParams = pEnumTypeDef name <|> pAliasDef name typeParams
 
+    let pTypeParams =
+      sepBy (regex "@[a-zA-Z0-9_]+") (pSkipToken ",")
+      |> between (pSkipToken "(") (pSkipToken ")")
+
+    let checkColTypeParams name xs =
+      let rec tryFindDup existsParams = function
+      | x::_ when List.exists ((=)x) existsParams -> Some x
+      | x::xs -> tryFindDup (x::existsParams) xs
+      | [] -> None
+
+      Basis.Core.OptionDefaultOps.option {
+        let! xs = xs
+        let! dup = tryFindDup [] xs
+        return failFatally (sprintf "型%sの定義で型変数%sが重複しています。" name dup)
+      }
+
     let pColTypeDef = parse {
       let! colTypeSummary = pSummary |> attempt |> opt
       do! pSkipToken "coltype"
       let! colTypeName = pColTypeName
-      let! colTypeParams = pzero |> attempt |> opt // TODO : 型パラメータの解析
-      let colTypeParams = match colTypeParams with Some x -> x | _ -> []
+      let! colTypeParams = pTypeParams |> attempt |> opt
+      do! match checkColTypeParams colTypeName colTypeParams with Some p -> p | None -> preturn ()
+      let colTypeParams =
+        colTypeParams
+        |> function Some x -> x | _ -> []
+        |> List.map (fun p -> TypeVariable p)
       let! colTypeJpName = pJpName |> attempt |> opt
       do! pSkipToken "="
       let! typ, attrs = pTypeDef colTypeName colTypeParams
@@ -199,7 +219,7 @@ module Parser =
       return TableDef { TableSummary = tableSummary; TableName = tableName; TableJpName = tableJpName; ColumnDefs = colDefs }
     }
  
-    let parser = many (attempt pColTypeDef <|> pTableDef)
+    let parser = many (attempt pColTypeDef <|> pTableDef) .>> eof
 
   type Position = {
     Line: int64
