@@ -58,6 +58,19 @@ module ParserTest =
                           ColumnJpName = None } ]
 
     [<Test>]
+    let ``one generic alias def with attribute - partial bound`` () =
+      let originalType =
+        { ColumnTypeDef = BuiltinType { TypeName = "decimal"; TypeParameters = [TypeVariable "@1"; BoundValue "4"] }
+          ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
+
+      "coltype T(@n) = decimal(@n, 4)"
+      |> parse
+      |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "T"; TypeParameters = [TypeVariable "@n"] }, originalType)
+                          ColumnAttributes = []
+                          ColumnSummary = None
+                          ColumnJpName = None } ]
+
+    [<Test>]
     let ``summary and jp name`` () =
       """
       /// 名前を表します。

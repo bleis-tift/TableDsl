@@ -105,10 +105,17 @@ module Parser =
         many (attempt p) |>> (fun xs -> System.String.Concat(xs))
       pNonQuotedTypeParamElem [','; ')']
 
-    let pTypeParamElem = (pQuotedTypeParamElem <|> pNonQuotedTypeParamElem) >>= (function "" -> pzero | other -> preturn other)
+    let pBoundTypeParamElem = (pQuotedTypeParamElem <|> pNonQuotedTypeParamElem) >>= (function "" -> pzero | other -> preturn other)
 
-    let pTypeParam =
-      sepBy pTypeParamElem (pchar ',') |> between (pchar '(') (pchar ')')
+    let pBoundTypeParam =
+      sepBy pBoundTypeParamElem (pchar ',') |> between (pchar '(') (pchar ')')
+
+    // TODO : '文字列'や4.2に対応すること
+    let pOpenTypeParamElem =
+      (regex "@[a-zA-Z0-9_]+" |>> fun x -> TypeVariable x) <|> (regex "[a-zA-Z0-9_]+" |>> fun x -> BoundValue x)
+
+    let pOpenTypeParam =
+      sepBy pOpenTypeParamElem (pSkipToken ",") |> between (pchar '(') (pchar ')')
 
     let resolveType typeName typeParams env =
       match env |> List.tryFind (fun (name, paramCount, _) -> name = typeName && paramCount = (List.length typeParams)) with
@@ -119,7 +126,7 @@ module Parser =
 
     let pClosedTypeRefWithoutAttributes = parse {
       let! typeName = pName
-      let! typeParams = opt (attempt pTypeParam)
+      let! typeParams = opt (attempt pBoundTypeParam)
       let typeParams =
         match typeParams with
         | None -> []
@@ -128,6 +135,26 @@ module Parser =
       let typ, perror = resolveType typeName typeParams env
       do! perror
       return ({ Type = typ; TypeParameters = typeParams }, [])
+    }
+
+    let pOpenTypeRefWithoutAttributes = parse {
+      let! typeName = pName
+      let! typeParams = opt (attempt pOpenTypeParam)
+      let typeParams =
+        match typeParams with
+        | None -> []
+        | Some x -> x
+      let! env = getUserState
+      let typ, perror = resolveType typeName typeParams env
+      let typDef =
+        match typ.ColumnTypeDef with
+        | BuiltinType ({ TypeParameters = ts } as bt) ->
+            BuiltinType { bt with TypeParameters = (typeParams, ts) ||> List.map2 (fun t1 t2 -> match t1 with BoundValue v -> BoundValue v | _ -> t2) }
+        | AliasDef (({ TypeParameters = ts } as ad), org) ->
+            AliasDef ({ ad with TypeParameters = (typeParams, ts) ||> List.map2 (fun t1 t2 -> match t1 with BoundValue v -> BoundValue v | _ -> t2) }, org)
+        | other -> other
+      do! perror
+      return ({ typ with ColumnTypeDef = typDef }, [])
     }
 
     let pComplexAttribute = parse {
@@ -150,11 +177,21 @@ module Parser =
       return (typ, attrs)
     }
 
+    let pOpenTypeRefWithAttributes = parse {
+      do! pSkipToken "{"
+      let! typ, _ = pOpenTypeRefWithoutAttributes
+      do! pSkipToken "with"
+      let! attrs = pAttributes
+      do! pSkipToken "}"
+      return (typ, attrs)
+    }
+
     let pClosedTypeRef = pClosedTypeRefWithAttributes <|> pClosedTypeRefWithoutAttributes
+    let pOpenTypeRef = pOpenTypeRefWithAttributes <|> pOpenTypeRefWithoutAttributes
  
     let pAliasDef name typeParams = parse {
-      let! body, attrs = pClosedTypeRef
-      return (AliasDef ({ TypeName = name; TypeParameters = typeParams }, body.Type), attrs)
+      let! body, attrs = pOpenTypeRef
+      return (AliasDef ({ TypeName = name; TypeParameters = typeParams }, body), attrs)
     }
 
     let pEnumTypeDef name = parse {
