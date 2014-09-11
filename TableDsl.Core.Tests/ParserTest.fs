@@ -91,6 +91,27 @@ module ParserTest =
                           ColumnJpName = None } ]
 
     [<Test>]
+    let ``two alias defs`` () =
+      """
+      coltype FK(@table, @col) = { uniqueidentifier with FK = @table.@col }
+      coltype FKID(@table) = FK(@table, Id)
+      table t = {}
+      """
+      |> parse
+      |> should equal
+           [ let fkType sndParam =
+               { ColumnTypeDef = AliasDef ({ TypeName = "FK"; TypeParameters = [TypeVariable "@table"; sndParam] }, builtin0 "uniqueidentifier")
+                 ColumnAttributes = [ ComplexAttr ("FK", [ Var "@table"; Lit "."; Var "@col" ]) ]
+                 ColumnSummary = None
+                 ColumnJpName = None }
+             yield fkType (TypeVariable "@col")
+             yield { ColumnTypeDef = AliasDef ({ TypeName = "FKID"; TypeParameters = [TypeVariable "@table"] }, fkType (BoundValue "Id"))
+                     ColumnAttributes = []
+                     ColumnSummary = None
+                     ColumnJpName = None }
+           ]
+
+    [<Test>]
     let ``summary and jp name`` () =
       """
       /// 名前を表します。

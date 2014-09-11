@@ -4,7 +4,7 @@ open FParsec
 open TableDsl
 
 module Types =
-  type State = (string * int * TypeDef) list
+  type State = (string * int * TypeDef * ColumnAttribute list) list
   type internal Parser<'T> = Parser<'T, State>
 
 open Types
@@ -16,7 +16,7 @@ module internal State =
       let typeVar i =
         TypeVariable ("@" + string (i + 1))
       [ for i in 0..paramCount ->
-          (name, i, BuiltinType { TypeName = name; TypeParameters = List.init i typeVar }) ]
+          (name, i, BuiltinType { TypeName = name; TypeParameters = List.init i typeVar }, []) ]
     [ builtin "bigint" 0
       builtin "int" 0
       builtin "smallint" 0
@@ -51,5 +51,5 @@ module internal State =
       builtin "xml" 1
       builtin "geography" 0
       builtin "geometry" 0
-      [("nullable", 1, BuiltinType { TypeName = "nullable"; TypeParameters = [TypeVariable "@type"] })]
+      [("nullable", 1, BuiltinType { TypeName = "nullable"; TypeParameters = [TypeVariable "@type"] }, [])]
     ] |> List.concat

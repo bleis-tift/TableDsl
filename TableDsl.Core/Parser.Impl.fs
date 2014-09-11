@@ -43,11 +43,13 @@ module internal Impl =
     sepBy pOpenTypeParamElem (pSkipToken ",") |> between (pchar '(') (pchar ')')
 
   let resolveType typeName typeParams env =
-    match env |> List.tryFind (fun (name, paramCount, _) -> name = typeName && paramCount = (List.length typeParams)) with
-    | Some (name, paramCount, t) ->
+    let resolved =
+      env |> List.rev |> List.tryFind (fun (name, paramCount, _, _) -> name = typeName && paramCount = (List.length typeParams)) 
+    match resolved with
+    | Some (name, paramCount, t, attrs) ->
         let typ = { ColumnSummary = None; ColumnTypeDef = t; ColumnJpName = None; ColumnAttributes = [] }
-        typ, preturn ()
-    | None -> Unchecked.defaultof<_>, failFatally (sprintf "%sという型が見つかりませんでした。" typeName)
+        typ, attrs, preturn ()
+    | None -> Unchecked.defaultof<_>, [], failFatally (sprintf "%sという型が見つかりませんでした。" typeName)
 
   let pClosedTypeRefWithoutAttributes = parse {
     let! typeName = pName
@@ -57,9 +59,9 @@ module internal Impl =
       | None -> []
       | Some x -> x
     let! env = getUserState
-    let typ, perror = resolveType typeName typeParams env
+    let typ, attrs, perror = resolveType typeName typeParams env
     do! perror
-    return ({ Type = typ; TypeParameters = typeParams }, [])
+    return ({ Type = typ; TypeParameters = typeParams }, attrs)
   }
 
   let pOpenTypeRefWithoutAttributes = parse {
@@ -70,16 +72,20 @@ module internal Impl =
       | None -> []
       | Some x -> x
     let! env = getUserState
-    let typ, perror = resolveType typeName typeParams env
+    let typ, attrs, perror = resolveType typeName typeParams env
+    do! perror
     let typDef =
       match typ.ColumnTypeDef with
       | BuiltinType ({ TypeParameters = ts } as bt) ->
           BuiltinType { bt with TypeParameters = (typeParams, ts) ||> List.map2 (fun t1 t2 -> match t1 with BoundValue v -> BoundValue v | _ -> t2) }
       | AliasDef (({ TypeParameters = ts } as ad), org) ->
-          AliasDef ({ ad with TypeParameters = (typeParams, ts) ||> List.map2 (fun t1 t2 -> match t1 with BoundValue v -> BoundValue v | _ -> t2) }, org)
+          let ts =
+            match typeParams with
+            | [] -> ts
+            | typeParams -> (typeParams, ts) ||> List.map2 (fun t1 t2 -> match t1 with BoundValue v -> BoundValue v | _ -> t2)
+          AliasDef ({ ad with TypeParameters = ts }, org)
       | other -> other
-    do! perror
-    return ({ typ with ColumnTypeDef = typDef }, [])
+    return ({ typ with ColumnTypeDef = typDef; ColumnAttributes = attrs }, [])
   }
 
   let pClosedComplexAttribute = parse {
@@ -166,6 +172,7 @@ module internal Impl =
     let! colTypeJpName = pJpNameOpt
     do! pSkipToken "="
     let! typ, attrs = pTypeDef colTypeName colTypeParams
+    do! updateUserState (fun state -> (colTypeName, colTypeParams.Length, typ, attrs)::state)
     return ColTypeDef { ColumnSummary = colTypeSummary; ColumnTypeDef = typ; ColumnJpName = colTypeJpName; ColumnAttributes = attrs }
   }
 
