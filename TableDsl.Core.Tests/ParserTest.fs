@@ -47,10 +47,10 @@ module ParserTest =
 
     [<Test>]
     let ``one alias def with attribute`` () =
-      "coltype nvarchar = { nvarchar with collate = Japanese_BIN }"
+      "coltype uniqueidentifier = { uniqueidentifier with default = NEWID() }"
       |> parse
-      |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "nvarchar"; TypeParameters = [] }, builtin0 "nvarchar")
-                          ColumnAttributes = [ ComplexAttr ("collate", [ Lit "Japanese_BIN" ]) ]
+      |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "uniqueidentifier"; TypeParameters = [] }, builtin0 "uniqueidentifier")
+                          ColumnAttributes = [ ComplexAttr ("default", [ Lit "NEWID()" ]) ]
                           ColumnSummary = None
                           ColumnJpName = None } ]
 

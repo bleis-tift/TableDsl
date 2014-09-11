@@ -35,4 +35,4 @@ module internal Primitives =
   // * 優先順位のカッコ ex) (1 + 2) * 3
   // * CASE式(優先度低)
   // * サブクエリ(優先度低)
-  let pSqlValue: Parser<_> = regex "[a-zA-Z0-9_.]+"
+  let pSqlValue: Parser<_> = regex @"[a-zA-Z0-9_.]+(\(\))?"
