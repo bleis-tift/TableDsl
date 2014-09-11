@@ -21,6 +21,9 @@ module ParserTest =
     { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [TypeVariable _1; TypeVariable _2] }
       ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
 
+  let builtinTypeDef0 name =
+    { TypeName = name; TypeParameters = [] }
+
   [<Test>]
   let ``empty string`` () =
     ""
@@ -46,11 +49,41 @@ module ParserTest =
                           ColumnJpName = None } ]
 
     [<Test>]
+    let ``one simple enum type`` () =
+      """
+      coltype Platform =
+        | iOS = 1
+        | Android = 2
+      based int"""
+      |> parse
+      |> should equal [ { ColumnTypeDef = EnumTypeDef { EnumTypeName = "Platform"
+                                                        BaseType = builtinTypeDef0 "int"
+                                                        Cases = [("iOS", 1); ("Android", 2)] }
+                          ColumnAttributes = []
+                          ColumnSummary = None
+                          ColumnJpName = None } ]
+
+    [<Test>]
     let ``one alias def with attribute`` () =
       "coltype uniqueidentifier = { uniqueidentifier with default = NEWID() }"
       |> parse
       |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "uniqueidentifier"; TypeParameters = [] }, builtin0 "uniqueidentifier")
                           ColumnAttributes = [ ComplexAttr ("default", [ Lit "NEWID()" ]) ]
+                          ColumnSummary = None
+                          ColumnJpName = None } ]
+
+    [<Test>]
+    let ``one simple enum type with attribute`` () =
+      """
+      coltype Platform =
+        | iOS = 1
+        | Android = 2
+      based { int with default = 1 }"""
+      |> parse
+      |> should equal [ { ColumnTypeDef = EnumTypeDef { EnumTypeName = "Platform"
+                                                        BaseType = builtinTypeDef0 "int"
+                                                        Cases = [("iOS", 1); ("Android", 2)] }
+                          ColumnAttributes = [ ComplexAttr ("default", [ Lit "1" ]) ]
                           ColumnSummary = None
                           ColumnJpName = None } ]
 

@@ -137,11 +137,19 @@ module internal Impl =
     return (AliasDef ({ TypeName = name; TypeParameters = typeParams }, body), attrs)
   }
 
-  let pEnumTypeDef name = parse {
-    return! pzero
+  let pEnumCase = attempt (pSkipOnlineToken "|") >>. pName .>> pSkipOnlineToken "=" .>>. pInteger
+  let pEnumCases = sepEndBy1 pEnumCase newline
+  let pEnumTypeDef name typeParams = parse {
+    let! cases = pEnumCases
+    do! pSkipToken "based"
+    let! based, attrs = pOpenTypeRef
+    match based.ColumnTypeDef with
+    | BuiltinType typ -> return (EnumTypeDef { EnumTypeName = name; BaseType = typ; Cases = cases }), attrs
+    | AliasDef (typ, orig) -> return (EnumTypeDef { EnumTypeName = name; BaseType = typ; Cases = cases }), attrs
+    | EnumTypeDef typ -> return! failFatally (sprintf "列挙型の定義(%s)の基底型に他の列挙型(%s)を指定することはできません。" name typ.EnumTypeName)
   }
 
-  let pTypeDef name typeParams = pEnumTypeDef name <|> pAliasDef name typeParams
+  let pTypeDef name typeParams = pEnumTypeDef name typeParams <|> pAliasDef name typeParams
 
   let pTypeParams =
     sepBy pTypeVariableName (pSkipToken ",")

@@ -11,6 +11,8 @@ module internal Primitives =
   let pSkipToken str = wsnl >>. pstring str >>. wsnl |>> ignore
   let pSkipOnlineToken str = ws >>. pstring str >>. ws |>> ignore
 
+  let pInteger: Parser<_> = regex "[1-9][0-9]*" |>> int
+
   let pName: Parser<_> = regex "[a-zA-Z_][a-zA-Z0-9_]*"
 
   let pSummaryLine: Parser<_> = attempt (pSkipOnlineToken "///") >>. manyChars (noneOf "\n")
