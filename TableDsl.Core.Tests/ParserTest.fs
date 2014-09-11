@@ -178,6 +178,23 @@ module ParserTest =
          | Failure (FParsecDefaultMessage err) -> failwithf "oops! : %s" err
          | Failure (UserFriendlyMessages errs) -> errs |> List.map (fun (_, _, msg) -> msg) |> should equal ["型nvarcharの定義で型変数@nが重複しています。"]
 
+    [<Test>]
+    let ``can't inherit enum type`` () =
+      """
+      coltype Platform =
+        | iOS = 1
+        | Android = 2
+      based { int with default = 1 }
+      
+      coltype Platform2 =
+        | WP = 3
+      based Platform"""
+      |> tryParse
+      |> function
+         | Success res -> failwithf "oops! Success! : %A" res
+         | Failure (FParsecDefaultMessage err) -> failwithf "oops! : %s" err
+         | Failure (UserFriendlyMessages errs) -> errs |> List.map (fun (_, _, msg) -> msg) |> should equal ["列挙型の定義(Platform2)の基底型に他の列挙型(Platform)を指定することはできません。"]
+
   module TableDef =
     let parse input =
       Parser.parse input
