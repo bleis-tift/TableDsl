@@ -50,7 +50,7 @@ module ParserTest =
       "coltype nvarchar = { nvarchar with collate = Japanese_BIN }"
       |> parse
       |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "nvarchar"; TypeParameters = [] }, builtin0 "nvarchar")
-                          ColumnAttributes = [ ComplexAttr ("collate", { Value = "Japanese_BIN" }) ]
+                          ColumnAttributes = [ ComplexAttr ("collate", [ Lit "Japanese_BIN" ]) ]
                           ColumnSummary = None
                           ColumnJpName = None } ]
 
@@ -59,7 +59,7 @@ module ParserTest =
       "coltype nvarchar(@n) = { nvarchar(@n) with collate = Japanese_BIN }"
       |> parse
       |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "nvarchar"; TypeParameters = [TypeVariable "@n"] }, builtin1 "nvarchar" "@1")
-                          ColumnAttributes = [ ComplexAttr ("collate", { Value = "Japanese_BIN" }) ]
+                          ColumnAttributes = [ ComplexAttr ("collate", [ Lit "Japanese_BIN" ]) ]
                           ColumnSummary = None
                           ColumnJpName = None } ]
 
@@ -84,7 +84,7 @@ module ParserTest =
       """
       |> parse
       |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "Name"; TypeParameters = [] }, builtin0 "nvarchar")
-                          ColumnAttributes = [ ComplexAttr ("collate", { Value = "Japanese_BIN" }) ]
+                          ColumnAttributes = [ ComplexAttr ("collate", [ Lit "Japanese_BIN" ]) ]
                           ColumnSummary = Some "名前を表します。"
                           ColumnJpName = Some "名前" } ]
 
@@ -200,7 +200,7 @@ module ParserTest =
                ColumnDefs =
                  [ { ColumnSummary = None
                      ColumnName = ColumnName ("Id", None)
-                     ColumnType = ({ Type = builtin0 "uniqueidentifier"; TypeParameters = [] }, [ComplexAttr ("index", { Value = "unclustered.IX1.1" })]) } ]
+                     ColumnType = ({ Type = builtin0 "uniqueidentifier"; TypeParameters = [] }, [ComplexAttr ("index", [ Lit "unclustered.IX1.1" ])]) } ]
              }
            ]
 
@@ -220,8 +220,8 @@ module ParserTest =
                  [ { ColumnSummary = None
                      ColumnName = ColumnName ("Id", None)
                      ColumnType = ({ Type = builtin0 "uniqueidentifier"; TypeParameters = [] },
-                                   [ ComplexAttr ("PK", { Value = "unclustered" })
-                                     ComplexAttr ("index", { Value = "clustered.IX1.1" })
+                                   [ ComplexAttr ("PK", [ Lit "unclustered" ])
+                                     ComplexAttr ("index", [ Lit "clustered.IX1.1" ])
                                      SimpleAttr "unique" ]) } ]
              }
            ]

@@ -88,17 +88,19 @@ module internal Impl =
     let! name = pName
     do! pSkipToken "="
     let! value = regex "[a-zA-Z0-9_.]+"
-    return ComplexAttr (name, { Value = value })
+    return ComplexAttr (name, [ Lit value ])
   }
   let pSimpleAttribute = wsnl >>. pName |>> (fun name -> SimpleAttr name)
-  let pAttribute = attempt pComplexAttribute <|> pSimpleAttribute
-  let pAttributes = sepBy1 pAttribute (pchar ';')
+  let pClosedAttribute = attempt pComplexAttribute <|> pSimpleAttribute
+  let pOpenAttribute = attempt pComplexAttribute <|> pSimpleAttribute
+  let pClosedAttributes = sepBy1 pClosedAttribute (pchar ';')
+  let pOpenAttributes = sepBy1 pOpenAttribute (pchar ';')
 
   let pClosedTypeRefWithAttributes = parse {
     do! pSkipToken "{"
     let! typ, _ = pClosedTypeRefWithoutAttributes
     do! pSkipToken "with"
-    let! attrs = pAttributes
+    let! attrs = pClosedAttributes
     do! pSkipToken "}"
     return (typ, attrs)
   }
@@ -107,7 +109,7 @@ module internal Impl =
     do! pSkipToken "{"
     let! typ, _ = pOpenTypeRefWithoutAttributes
     do! pSkipToken "with"
-    let! attrs = pAttributes
+    let! attrs = pOpenAttributes
     do! pSkipToken "}"
     return (typ, attrs)
   }

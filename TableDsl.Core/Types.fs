@@ -1,10 +1,11 @@
 ﻿namespace TableDsl
  
-/// 属性値は値を持つ。
-type AttributeValue = {
-  Value: string
-  // 追加のフィールドはある？
-}
+type AttributeValueElem =
+  | Lit of string
+  | Var of string
+
+/// 属性値は属性値の要素のリスト
+type AttributeValue = AttributeValueElem list
  
 /// サマリは単なる文字列型。
 type Summary = string
