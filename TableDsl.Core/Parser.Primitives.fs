@@ -23,3 +23,8 @@ module internal Primitives =
 
   let pJpName = many1Chars (noneOf "\n]") |> between (pSkipToken "[") (pSkipToken "]")
   let pJpNameOpt = opt (attempt pJpName)
+
+  let pTypeVariableName: Parser<_> = regex "@[a-zA-Z0-9_]+"
+
+  // TODO : '文字列'や4.2に対応すること
+  let pSqlValue: Parser<_> = regex "[a-zA-Z0-9_.]+"

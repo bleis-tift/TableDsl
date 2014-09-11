@@ -36,9 +36,8 @@ module internal Impl =
   let pBoundTypeParam =
     sepBy pBoundTypeParamElem (pchar ',') |> between (pchar '(') (pchar ')')
 
-  // TODO : '文字列'や4.2に対応すること
   let pOpenTypeParamElem =
-    (regex "@[a-zA-Z0-9_]+" |>> fun x -> TypeVariable x) <|> (regex "[a-zA-Z0-9_]+" |>> fun x -> BoundValue x)
+    pTypeVariableName |>> TypeVariable <|> (pSqlValue |>> BoundValue)
 
   let pOpenTypeParam =
     sepBy pOpenTypeParamElem (pSkipToken ",") |> between (pchar '(') (pchar ')')
@@ -83,16 +82,26 @@ module internal Impl =
     return ({ typ with ColumnTypeDef = typDef }, [])
   }
 
-  let pComplexAttribute = parse {
+  let pClosedComplexAttribute = parse {
     do! wsnl |>> ignore
     let! name = pName
     do! pSkipToken "="
-    let! value = regex "[a-zA-Z0-9_.]+"
+    let! value = pSqlValue
     return ComplexAttr (name, [ Lit value ])
   }
+  let pVarAttrValueElem = pTypeVariableName |>> Var
+  let pLitAttrValueElem = pSqlValue |>> Lit
+  let pAttributeValueElem = pVarAttrValueElem <|> pLitAttrValueElem
+  let pOpenComplexAttribute = parse {
+    do! wsnl |>> ignore
+    let! name = pName
+    do! pSkipToken "="
+    let! values = many1 pAttributeValueElem
+    return ComplexAttr (name, values)
+  }
   let pSimpleAttribute = wsnl >>. pName |>> (fun name -> SimpleAttr name)
-  let pClosedAttribute = attempt pComplexAttribute <|> pSimpleAttribute
-  let pOpenAttribute = attempt pComplexAttribute <|> pSimpleAttribute
+  let pClosedAttribute = attempt pClosedComplexAttribute <|> pSimpleAttribute
+  let pOpenAttribute = attempt pOpenComplexAttribute <|> pSimpleAttribute
   let pClosedAttributes = sepBy1 pClosedAttribute (pchar ';')
   let pOpenAttributes = sepBy1 pOpenAttribute (pchar ';')
 
@@ -129,7 +138,7 @@ module internal Impl =
   let pTypeDef name typeParams = pEnumTypeDef name <|> pAliasDef name typeParams
 
   let pTypeParams =
-    sepBy (regex "@[a-zA-Z0-9_]+") (pSkipToken ",")
+    sepBy pTypeVariableName (pSkipToken ",")
     |> between (pSkipToken "(") (pSkipToken ")")
 
   let checkColTypeParams name xs =

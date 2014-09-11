@@ -55,6 +55,19 @@ module ParserTest =
                           ColumnJpName = None } ]
 
     [<Test>]
+    let ``one generic alias def - partial bound`` () =
+      let originalType =
+        { ColumnTypeDef = BuiltinType { TypeName = "decimal"; TypeParameters = [TypeVariable "@1"; BoundValue "4"] }
+          ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
+
+      "coltype T(@n) = decimal(@n, 4)"
+      |> parse
+      |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "T"; TypeParameters = [TypeVariable "@n"] }, originalType)
+                          ColumnAttributes = []
+                          ColumnSummary = None
+                          ColumnJpName = None } ]
+
+    [<Test>]
     let ``one generic alias def with attribute`` () =
       "coltype nvarchar(@n) = { nvarchar(@n) with collate = Japanese_BIN }"
       |> parse
@@ -64,15 +77,16 @@ module ParserTest =
                           ColumnJpName = None } ]
 
     [<Test>]
-    let ``one generic alias def with attribute - partial bound`` () =
+    let ``generic alias def with parameterized attribute value`` () =
       let originalType =
         { ColumnTypeDef = BuiltinType { TypeName = "decimal"; TypeParameters = [TypeVariable "@1"; BoundValue "4"] }
           ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
 
-      "coltype T(@n) = decimal(@n, 4)"
+      "coltype T(@a, @b, @c) = { int with default = 1@a@b@c }"
       |> parse
-      |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "T"; TypeParameters = [TypeVariable "@n"] }, originalType)
-                          ColumnAttributes = []
+      |> should equal [ { ColumnTypeDef =
+                            AliasDef ({ TypeName = "T"; TypeParameters = [TypeVariable "@a"; TypeVariable "@b"; TypeVariable "@c"] }, builtin0 "int")
+                          ColumnAttributes = [ ComplexAttr ("default", [ Lit "1"; Var "@a"; Var "@b"; Var "@c" ]) ]
                           ColumnSummary = None
                           ColumnJpName = None } ]
 
