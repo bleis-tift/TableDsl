@@ -27,4 +27,12 @@ module internal Primitives =
   let pTypeVariableName: Parser<_> = regex "@[a-zA-Z0-9_]+"
 
   // TODO : '文字列'や4.2に対応すること
+  // 対応しなければならないもの
+  // * 関数呼び出し ex) NEWID(), f(x, y)
+  // * 演算 ex) 1 + 2
+  // * キャスト ex) cast(value as type)
+  // * 値 ex) 42.1, N'hoge', 'hogehoge', 0x, 0x42
+  // * 優先順位のカッコ ex) (1 + 2) * 3
+  // * CASE式(優先度低)
+  // * サブクエリ(優先度低)
   let pSqlValue: Parser<_> = regex "[a-zA-Z0-9_.]+"
