@@ -10,10 +10,16 @@ module ParserTest =
   open TableDsl.Parser
 
   let builtin0 name =
-    { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [] }; ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None }
+    { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [] }
+      ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None }
 
   let builtin1 name _1 =
-    { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [TypeVariable _1] }; ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
+    { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [TypeVariable _1] }
+      ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
+
+  let builtin2 name _1 _2 =
+    { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [TypeVariable _1; TypeVariable _2] }
+      ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
 
   [<Test>]
   let ``empty string`` () =
@@ -28,7 +34,7 @@ module ParserTest =
 
     let tryParse input =
       Parser.tryParse input
-      |> Result.map (List.choose (function ColTypeDef def -> Some def | _ -> None))
+      |> Result.map (fst >> List.choose (function ColTypeDef def -> Some def | _ -> None))
 
     [<Test>]
     let ``one simple alias def`` () =
@@ -98,7 +104,7 @@ module ParserTest =
 
     let tryParse input =
       Parser.tryParse input
-      |> Result.map (List.choose (function TableDef def -> Some def | _ -> None))
+      |> Result.map (fst >> List.choose (function TableDef def -> Some def | _ -> None))
 
     [<Test>]
     let ``one simple table`` () =
