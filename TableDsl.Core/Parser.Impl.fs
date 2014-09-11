@@ -37,7 +37,7 @@ module internal Impl =
     sepBy pBoundTypeParamElem (pchar ',') |> between (pchar '(') (pchar ')')
 
   let pOpenTypeParamElem =
-    pTypeVariableName |>> TypeVariable <|> (pSqlValue |>> BoundValue)
+    pTypeVariableName |>> TypeVariable <|> (pSqlValue |>> BoundValue) // ここはpSqlValueじゃなくて、pSqlTypeか？
 
   let pOpenTypeParam =
     sepBy pOpenTypeParamElem (pSkipToken ",") |> between (pchar '(') (pchar ')')

@@ -24,6 +24,10 @@ module ParserTest =
   let builtinTypeDef0 name =
     { TypeName = name; TypeParameters = [] }
 
+  let boundNullable typ =
+    { ColumnTypeDef = BuiltinType { TypeName = "nullable"; TypeParameters = [BoundValue typ] }
+      ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
+
   [<Test>]
   let ``empty string`` () =
     ""
@@ -96,6 +100,15 @@ module ParserTest =
       "coltype T(@n) = decimal(@n, 4)"
       |> parse
       |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "T"; TypeParameters = [TypeVariable "@n"] }, originalType)
+                          ColumnAttributes = []
+                          ColumnSummary = None
+                          ColumnJpName = None } ]
+
+    [<Test>]
+    let ``one alias def with nested type`` () =
+      "coltype T = nullable(nvarchar(256))"
+      |> parse
+      |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "T"; TypeParameters = [] }, boundNullable "nvarchar(256)")
                           ColumnAttributes = []
                           ColumnSummary = None
                           ColumnJpName = None } ]
