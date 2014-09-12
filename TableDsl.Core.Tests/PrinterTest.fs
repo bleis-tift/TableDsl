@@ -49,6 +49,9 @@ module PrinterTest =
       "coltype T = nullable(nvarchar(256))"
       "coltype nvarchar(@n) = { nvarchar(@n) with collate = Japanese_BIN }"
       "coltype T(@a, @b, @c) = { int with default = 1@a@b@c }"
+      """
+      coltype FK(@table, @col) = { uniqueidentifier with FK = @table.@col }
+      coltype FKID(@table) = FK(@table, Id)"""
     ]
     |> List.map adjust
 

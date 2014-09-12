@@ -45,7 +45,7 @@ module Printer =
     " " +
       match col.ColumnTypeDef with
       | BuiltinType typ -> printAttributes (printNonEnumTypeName typ) attrs
-      | AliasDef (typ, originalType) -> failwith "Not implemented yet"
+      | AliasDef (typ, originalType) -> printAttributes (printNonEnumTypeName typ) attrs
       | EnumTypeDef typ -> failwith "Not implemented yet"
 
   let printEnumCases cases =
