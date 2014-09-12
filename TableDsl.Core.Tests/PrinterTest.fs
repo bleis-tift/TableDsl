@@ -46,6 +46,9 @@ module PrinterTest =
         | Android = 2
       based { int with default = 1 }"""
       "coltype T(@n) = decimal(@n, 4)"
+      "coltype T = nullable(nvarchar(256))"
+      "coltype nvarchar(@n) = { nvarchar(@n) with collate = Japanese_BIN }"
+      "coltype T(@a, @b, @c) = { int with default = 1@a@b@c }"
     ]
     |> List.map adjust
 
