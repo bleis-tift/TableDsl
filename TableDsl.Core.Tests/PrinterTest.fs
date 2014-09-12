@@ -39,6 +39,12 @@ module PrinterTest =
         | iOS = 1
         | Android = 2
       based int"""
+      "coltype uniqueidentifier = { uniqueidentifier with default = NEWID() }"
+      """
+      coltype Platform =
+        | iOS = 1
+        | Android = 2
+      based { int with default = 1 }"""
     ]
     |> List.map adjust
 
