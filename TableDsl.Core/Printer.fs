@@ -23,6 +23,9 @@ module Printer =
   | [] -> ""
   | typeVars -> "(" + (typeVars |> List.map printOpenTypeParam |> Str.join ", ") + ")"
 
+  let printNonEnumTypeName nonEnumType =
+    nonEnumType.TypeName + (printOpenTypeParams nonEnumType.TypeParameters)
+
   let printColumnTypeDef col =
     " " +
       match col.ColumnTypeDef with
@@ -30,10 +33,16 @@ module Printer =
       | AliasDef (typ, originalType) -> failwith "Not implemented yet"
       | EnumTypeDef typ -> failwith "Not implemented yet"
 
+  let printEnumCases cases =
+    cases |> List.map (fun (name, value) -> "  | " + name + " = " + string value) |> Str.join "\n"
+
+  let printEnumTypeBody enumType =
+    "\n" + (printEnumCases enumType.Cases) + "\nbased " + (printNonEnumTypeName enumType.BaseType)
+
   let printTypeDef = function
   | BuiltinType _ -> failwith "組み込み型をcoltypeとして出力することはできません。"
-  | AliasDef (typ, originalType) -> (typ.TypeName + (printOpenTypeParams typ.TypeParameters), printColumnTypeDef originalType)
-  | EnumTypeDef typ -> failwith "Not implemented yet"
+  | AliasDef (typ, originalType) -> (printNonEnumTypeName typ, printColumnTypeDef originalType)
+  | EnumTypeDef typ -> (typ.EnumTypeName, printEnumTypeBody typ)
 
   let printTableDef table = ""
 

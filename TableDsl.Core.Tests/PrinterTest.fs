@@ -6,6 +6,7 @@ open NUnit.Framework
 [<TestFixture>]
 module PrinterTest =
   open TableDsl
+  open Basis.Core
 
   [<Test>]
   let ``print empty list`` () =
@@ -13,7 +14,35 @@ module PrinterTest =
     |> Printer.print
     |> should equal ""
 
-  [<TestCase("coltype Created = datetime2")>]
+  let trimAndCountIndent (str: string) =
+    let indent = str |> Seq.takeWhile ((=)' ') |> Seq.length
+    (str |> Str.subFrom indent, indent)
+
+  let adjust str =
+    let lines =
+      str |> Str.replace "\r\n" "\n" |> Str.splitBy "\n" |> Array.toList
+    let adjusted =
+      match lines with
+      | [] -> []
+      | [line] -> [line]
+      | ""::first::rest ->
+          let first, indent = trimAndCountIndent first
+          first::(rest |> List.map (Str.subFrom indent))
+      | _ ->
+          failwithf "oops! %A" lines
+    adjusted |> Str.join "\n"
+
+  let source =
+    [ "coltype Created = datetime2"
+      """
+      coltype Platform =
+        | iOS = 1
+        | Android = 2
+      based int"""
+    ]
+    |> List.map adjust
+
+  [<TestCaseSource("source")>]
   let tests str =
     str
     |> Parser.parse
