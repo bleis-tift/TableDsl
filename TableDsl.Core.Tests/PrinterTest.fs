@@ -61,6 +61,46 @@ module PrinterTest =
         Id: int
         Name: nvarchar(16)
       }"""
+      """
+      table Users = {
+        Id: int
+        Name: nvarchar(16)
+      }
+      table DeletedUsers = {
+        Id: int
+        UserId: int
+      }"""
+      """
+      table Users = {
+        Id: { uniqueidentifier with PK }
+      }"""
+      """
+      table Users = {
+        Id: { uniqueidentifier with index = unclustered.IX1.1 }
+      }"""
+      """
+      table Users = {
+        Id: { uniqueidentifier with PK = unclustered; index = clustered.IX1.1; unique }
+      }"""
+      """
+      table Users = {
+        _: datetime2
+      }"""
+      """
+      table Users = {
+        Id: int
+        Name: nullable(nvarchar(16))
+        Age: nullable(int)
+      }"""
+      """
+      /// ユーザテーブル
+      /// ユーザを表す。
+      table Users[ユーザテーブル] = {
+        /// ID
+        Id[ID]: int
+        /// ユーザ名
+        Name[名前]: nvarchar(16)
+      }"""
     ]
     |> List.map adjust
 
