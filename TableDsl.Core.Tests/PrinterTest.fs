@@ -45,6 +45,7 @@ module PrinterTest =
         | iOS = 1
         | Android = 2
       based { int with default = 1 }"""
+      "coltype T(@n) = decimal(@n, 4)"
     ]
     |> List.map adjust
 

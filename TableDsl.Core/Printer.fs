@@ -41,10 +41,10 @@ module Printer =
   let printNonEnumTypeName nonEnumType =
     nonEnumType.TypeName + (printOpenTypeParams nonEnumType.TypeParameters)
 
-  let printColumnTypeDef col attrs =
+  let printColumnTypeDef col typeParams attrs =
     " " +
       match col.ColumnTypeDef with
-      | BuiltinType typ -> printAttributes typ.TypeName attrs
+      | BuiltinType typ -> printAttributes (printNonEnumTypeName typ) attrs
       | AliasDef (typ, originalType) -> failwith "Not implemented yet"
       | EnumTypeDef typ -> failwith "Not implemented yet"
 
@@ -57,7 +57,7 @@ module Printer =
 
   let printTypeDef attrs = function
   | BuiltinType _ -> failwith "組み込み型をcoltypeとして出力することはできません。"
-  | AliasDef (typ, originalType) -> (printNonEnumTypeName typ, printColumnTypeDef originalType attrs)
+  | AliasDef (typ, originalType) -> (printNonEnumTypeName typ, printColumnTypeDef originalType typ.TypeParameters attrs)
   | EnumTypeDef typ -> (typ.EnumTypeName, printEnumTypeBody typ attrs)
 
   let printTableDef table = ""

@@ -94,7 +94,7 @@ module ParserTest =
     [<Test>]
     let ``one generic alias def - partial bound`` () =
       let originalType =
-        { ColumnTypeDef = BuiltinType { TypeName = "decimal"; TypeParameters = [TypeVariable "@1"; BoundValue "4"] }
+        { ColumnTypeDef = BuiltinType { TypeName = "decimal"; TypeParameters = [TypeVariable "@n"; BoundValue "4"] }
           ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
 
       "coltype T(@n) = decimal(@n, 4)"
@@ -117,7 +117,7 @@ module ParserTest =
     let ``one generic alias def with attribute`` () =
       "coltype nvarchar(@n) = { nvarchar(@n) with collate = Japanese_BIN }"
       |> parse
-      |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "nvarchar"; TypeParameters = [TypeVariable "@n"] }, builtin1 "nvarchar" "@1")
+      |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "nvarchar"; TypeParameters = [TypeVariable "@n"] }, builtin1 "nvarchar" "@n")
                           ColumnAttributes = [ ComplexAttr ("collate", [ Lit "Japanese_BIN" ]) ]
                           ColumnSummary = None
                           ColumnJpName = None } ]

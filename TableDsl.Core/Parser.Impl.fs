@@ -76,14 +76,10 @@ module internal Impl =
     do! perror
     let typDef =
       match typ.ColumnTypeDef with
-      | BuiltinType ({ TypeParameters = ts } as bt) ->
-          BuiltinType { bt with TypeParameters = (typeParams, ts) ||> List.map2 (fun t1 t2 -> match t1 with BoundValue v -> BoundValue v | _ -> t2) }
-      | AliasDef (({ TypeParameters = ts } as ad), org) ->
-          let ts =
-            match typeParams with
-            | [] -> ts
-            | typeParams -> (typeParams, ts) ||> List.map2 (fun t1 t2 -> match t1 with BoundValue v -> BoundValue v | _ -> t2)
-          AliasDef ({ ad with TypeParameters = ts }, org)
+      | BuiltinType bt ->
+          BuiltinType { bt with TypeParameters = typeParams }
+      | AliasDef (ad, org) ->
+          AliasDef ({ ad with TypeParameters = typeParams }, org)
       | other -> other
     return ({ typ with ColumnTypeDef = typDef; ColumnAttributes = attrs }, [])
   }
