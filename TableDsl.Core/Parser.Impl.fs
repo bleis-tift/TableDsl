@@ -44,7 +44,7 @@ module internal Impl =
 
   let resolveType typeName typeParams env =
     let resolved =
-      env |> List.rev |> List.tryFind (fun (name, paramCount, _, _) -> name = typeName && paramCount = (List.length typeParams)) 
+      env |> List.tryFind (fun (name, paramCount, _, _) -> name = typeName && paramCount = (List.length typeParams)) 
     match resolved with
     | Some (name, paramCount, t, attrs) ->
         let typ = { ColumnSummary = None; ColumnTypeDef = t; ColumnJpName = None; ColumnAttributes = [] }
@@ -108,24 +108,24 @@ module internal Impl =
   let pSimpleAttribute = wsnl >>. pName |>> (fun name -> SimpleAttr name)
   let pClosedAttribute = attempt pClosedComplexAttribute <|> pSimpleAttribute
   let pOpenAttribute = attempt pOpenComplexAttribute <|> pSimpleAttribute
-  let pClosedAttributes = sepBy1 pClosedAttribute (pchar ';')
-  let pOpenAttributes = sepBy1 pOpenAttribute (pchar ';')
+  let pClosedAttributes = sepBy1 pClosedAttribute (pchar ';') // 改行もセパレータ扱いにする？
+  let pOpenAttributes = sepBy1 pOpenAttribute (pchar ';') // 改行もセパレータ扱いにする？
 
   let pClosedTypeRefWithAttributes = parse {
-    do! pSkipToken "{"
+    do! pSkipOnelineToken "{"
     let! typ, _ = pClosedTypeRefWithoutAttributes
     do! pSkipToken "with"
     let! attrs = pClosedAttributes
-    do! pSkipToken "}"
+    do! pSkipOnelineToken "}"
     return (typ, attrs)
   }
 
   let pOpenTypeRefWithAttributes = parse {
-    do! pSkipToken "{"
+    do! pSkipOnelineToken "{"
     let! typ, _ = pOpenTypeRefWithoutAttributes
     do! pSkipToken "with"
     let! attrs = pOpenAttributes
-    do! pSkipToken "}"
+    do! pSkipOnelineToken "}"
     return (typ, attrs)
   }
 
@@ -137,7 +137,7 @@ module internal Impl =
     return (AliasDef ({ TypeName = name; TypeParameters = typeParams }, body), attrs)
   }
 
-  let pEnumCase = attempt (pSkipOnlineToken "|") >>. pName .>> pSkipOnlineToken "=" .>>. pInteger
+  let pEnumCase = attempt (pSkipOnelineToken "|") >>. pName .>> pSkipOnelineToken "=" .>>. pInteger
   let pEnumCases = sepEndBy1 pEnumCase newline
   let pEnumTypeDef name typeParams = parse {
     let! cases = pEnumCases
@@ -205,9 +205,9 @@ module internal Impl =
     do! pSkipToken "="
     let! colDefs =
       sepEndBy (attempt pColumnDef) newline
-      |> between (pSkipToken "{") (pSkipToken "}")
+      |> between (pSkipOnelineToken "{") (pSkipOnelineToken "}")
     return TableDef { TableSummary = tableSummary; TableName = tableName; TableJpName = tableJpName; ColumnDefs = colDefs }
   }
 
   // TODO : 一通り完成したら、エラーメッセージを入れる？(例: 「トップレベルの要素はcoltypeかtableのみが許されています。」)
-  let parser = many (attempt pColTypeDef <|> pTableDef) .>> eof
+  let parser = (sepBy ((attempt pColTypeDef) <|> (attempt pTableDef)) newline) .>> eof

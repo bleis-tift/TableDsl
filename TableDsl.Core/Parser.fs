@@ -55,7 +55,7 @@ module Parser =
       ]
     collectMessages' pos state msg
 
-  let tryParse' parser input =
+  let tryParse' parser (input: string) =
     let err2err (err: ParserError) =
       let pos = { Line = err.Position.Line; Column = err.Position.Column }
       let state =
@@ -66,7 +66,7 @@ module Parser =
       | [] -> FParsecDefaultMessage (sprintf "%A" err)
       | notEmpty -> UserFriendlyMessages notEmpty
 
-    match CharParsers.runParserOnString parser State.initialState "" input with
+    match CharParsers.runParserOnString parser State.initialState "" (input.TrimEnd()) with
     | Success (res, _, endPos) -> Basis.Core.Success (res, input.Substring(int endPos.Index))
     | Failure (_, err, _) -> Basis.Core.Failure (err2err err)
 

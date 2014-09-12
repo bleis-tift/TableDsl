@@ -141,7 +141,6 @@ module ParserTest =
       """
       coltype FK(@table, @col) = { uniqueidentifier with FK = @table.@col }
       coltype FKID(@table) = FK(@table, Id)
-      table t = {}
       """
       |> parse
       |> should equal
