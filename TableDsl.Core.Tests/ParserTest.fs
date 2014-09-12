@@ -124,10 +124,6 @@ module ParserTest =
 
     [<Test>]
     let ``generic alias def with parameterized attribute value`` () =
-      let originalType =
-        { ColumnTypeDef = BuiltinType { TypeName = "decimal"; TypeParameters = [TypeVariable "@1"; BoundValue "4"] }
-          ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
-
       "coltype T(@a, @b, @c) = { int with default = 1@a@b@c }"
       |> parse
       |> should equal [ { ColumnTypeDef =
