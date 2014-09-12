@@ -53,6 +53,7 @@
     <Content Include="app.config" />
     <Compile Include="Parser.Impl.Test.fs" />
     <Compile Include="ParserTest.fs" />
+    <Compile Include="PrinterTest.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Basis.Core">
