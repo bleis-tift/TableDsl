@@ -5,10 +5,13 @@ open Basis.Core
 module Printer =
   let printSummary indent = function
   | Some summary ->
-      summary
-      |> Str.splitBy "\n"
-      |> Array.map (fun line -> (String.replicate indent " ") + "/// " + line)
-      |> Str.join "\n"
+      let indent = String.replicate indent " "
+      let summary =
+        summary
+        |> Str.splitBy "\n"
+        |> Array.map (fun line -> indent + "/// " + line)
+        |> Str.join "\n"
+      summary + "\n"
   | None -> ""
 
   let printJpName = function

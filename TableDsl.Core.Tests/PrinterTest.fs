@@ -52,6 +52,9 @@ module PrinterTest =
       """
       coltype FK(@table, @col) = { uniqueidentifier with FK = @table.@col }
       coltype FKID(@table) = FK(@table, Id)"""
+      """
+      /// 名前を表します。
+      coltype Name[名前] = { nvarchar with collate = Japanese_BIN }"""
     ]
     |> List.map adjust
 
