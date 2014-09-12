@@ -57,6 +57,9 @@
     <Compile Include="Parser.Primitives.fs" />
     <Compile Include="Parser.Impl.fs" />
     <Compile Include="Parser.fs" />
+    <Compile Include="Printer.Primitives.fs" />
+    <Compile Include="Printer.ColTypeDef.fs" />
+    <Compile Include="Printer.TableDef.fs" />
     <Compile Include="Printer.fs" />
   </ItemGroup>
   <ItemGroup>

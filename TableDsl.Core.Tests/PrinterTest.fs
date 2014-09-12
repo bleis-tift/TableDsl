@@ -55,6 +55,12 @@ module PrinterTest =
       """
       /// 名前を表します。
       coltype Name[名前] = { nvarchar with collate = Japanese_BIN }"""
+
+      """
+      table Users = {
+        Id: int
+        Name: nvarchar(16)
+      }"""
     ]
     |> List.map adjust
 
