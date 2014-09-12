@@ -9,6 +9,10 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TableDsl.Core", "TableDsl.C
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TableDsl.Core.Tests", "TableDsl.Core.Tests\TableDsl.Core.Tests.fsproj", "{06DDA71C-F0EF-4BFF-8007-04E932A71EF4}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TableDsl.Sql", "TableDsl.Sql\TableDsl.Sql.fsproj", "{C55F2241-E6CB-4321-B622-BF1EA6EB3594}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TableDsl.Sql.Tests", "TableDsl.Sql.Tests\TableDsl.Sql.Tests.fsproj", "{C8F84E6E-461C-42E6-8888-679F8EDDCE2B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +31,14 @@ Global
 		{06DDA71C-F0EF-4BFF-8007-04E932A71EF4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{06DDA71C-F0EF-4BFF-8007-04E932A71EF4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{06DDA71C-F0EF-4BFF-8007-04E932A71EF4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C55F2241-E6CB-4321-B622-BF1EA6EB3594}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C55F2241-E6CB-4321-B622-BF1EA6EB3594}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C55F2241-E6CB-4321-B622-BF1EA6EB3594}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C55F2241-E6CB-4321-B622-BF1EA6EB3594}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C8F84E6E-461C-42E6-8888-679F8EDDCE2B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C8F84E6E-461C-42E6-8888-679F8EDDCE2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C8F84E6E-461C-42E6-8888-679F8EDDCE2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C8F84E6E-461C-42E6-8888-679F8EDDCE2B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
