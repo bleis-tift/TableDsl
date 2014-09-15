@@ -44,6 +44,23 @@ module PrinterTest =
           [Id] int NOT NULL
         , [Name] nvarchar(16) NOT NULL
       );"""
+      """
+      table Users = {
+        Id: int
+        Name: nvarchar(16)
+      }
+      table DeletedUsers = {
+        Id: int
+        UserId: int
+      }""", """
+      CREATE TABLE [Users] (
+          [Id] int NOT NULL
+        , [Name] nvarchar(16) NOT NULL
+      );
+      CREATE TABLE [DeletedUsers] (
+          [Id] int NOT NULL
+        , [UserId] int NOT NULL
+      );"""
     ]
     |> List.map (fun (a, b) -> (adjust a, adjust b))
 

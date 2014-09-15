@@ -32,10 +32,10 @@ module Printer =
       + "\n);"
 
   let printAlterTable table =
-    ""
+    None
 
   let printSummaryAndJpName table =
-    ""
+    None
 
   let print elems =
     let targets =
@@ -47,11 +47,11 @@ module Printer =
       |> Str.join "\n"
     let alterTable =
       targets
-      |> List.map printAlterTable
+      |> List.choose printAlterTable
       |> Str.join "\n"
     let summaryAndJpName =
       targets
-      |> List.map printSummaryAndJpName
+      |> List.choose printSummaryAndJpName
       |> Str.join "\n"
 
     createTable
