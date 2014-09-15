@@ -106,7 +106,7 @@ module PrinterTest =
 
   [<TestCaseSource("source")>]
   let tests str =
-    str
-    |> Parser.parse
-    |> Printer.print
-    |> should equal str
+    let printed = str |> Parser.parse |> Printer.print
+
+    printed |> Parser.parse
+    |> should equal (str |> Parser.parse)
