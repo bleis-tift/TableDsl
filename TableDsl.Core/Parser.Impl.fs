@@ -48,8 +48,8 @@ module internal Impl =
     match resolved with
     | Some (name, paramCount, t, attrs) ->
         let typ = { ColumnSummary = None; ColumnTypeDef = t; ColumnJpName = None; ColumnAttributes = [] }
-        typ, attrs, preturn ()
-    | None -> Unchecked.defaultof<_>, [], failFatally (sprintf "%sという型が見つかりませんでした。" typeName)
+        preturn (typ, attrs)
+    | None -> failFatally (sprintf "%sという型が見つかりませんでした。" typeName)
 
   let pClosedTypeRefWithoutAttributes = parse {
     let! typeName = pName
@@ -59,8 +59,7 @@ module internal Impl =
       | None -> []
       | Some x -> x
     let! env = getUserState
-    let typ, attrs, perror = resolveType typeName typeParams env
-    do! perror
+    let! typ, attrs = resolveType typeName typeParams env
     return ({ Type = typ; TypeParameters = typeParams }, attrs)
   }
 
@@ -72,8 +71,7 @@ module internal Impl =
       | None -> []
       | Some x -> x
     let! env = getUserState
-    let typ, attrs, perror = resolveType typeName typeParams env
-    do! perror
+    let! typ, attrs = resolveType typeName typeParams env
     let typDef =
       match typ.ColumnTypeDef with
       | BuiltinType bt ->
