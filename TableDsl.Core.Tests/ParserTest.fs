@@ -13,14 +13,6 @@ module ParserTest =
     { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [] }
       ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None }
 
-  let builtin1 name _1 =
-    { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [TypeVariable _1] }
-      ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
-
-  let builtin2 name _1 _2 =
-    { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [TypeVariable _1; TypeVariable _2] }
-      ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
-
   let builtinTypeDef0 name =
     { TypeName = name; TypeParameters = [] }
 
@@ -35,6 +27,14 @@ module ParserTest =
     |> should equal []
 
   module ColTypeDef =
+    let builtin1 name _1 =
+      { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [TypeVariable _1] }
+        ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
+
+    let builtin2 name _1 _2 =
+      { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [TypeVariable _1; TypeVariable _2] }
+        ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
+
     let parse input =
       Parser.parse input
       |> List.choose (function ColTypeDef def -> Some def | _ -> None)
@@ -191,6 +191,14 @@ module ParserTest =
          | Failure (UserFriendlyMessages errs) -> errs |> List.map (fun (_, _, msg) -> msg) |> should equal ["列挙型の定義(Platform2)の基底型に他の列挙型(Platform)を指定することはできません。"]
 
   module TableDef =
+    let builtin1 name _1 =
+      { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [BoundValue _1] }
+        ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
+
+    let builtin2 name _1 _2 =
+      { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [BoundValue _1; BoundValue _2] }
+        ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
+
     let parse input =
       Parser.parse input
       |> List.choose (function TableDef def -> Some def | _ -> None)
@@ -215,10 +223,10 @@ module ParserTest =
                ColumnDefs =
                  [ { ColumnSummary = None
                      ColumnName = ColumnName ("Id", None)
-                     ColumnType = ({ Type = builtin0 "int"; TypeParameters = [] }, []) }
+                     ColumnType = (builtin0 "int", []) }
                    { ColumnSummary = None
                      ColumnName = ColumnName ("Name", None)
-                     ColumnType = ({ Type = builtin1 "nvarchar" "@1"; TypeParameters = [ "16" ] }, []) } ]
+                     ColumnType = (builtin1 "nvarchar" "16", []) } ]
              }
            ]
 
@@ -242,10 +250,10 @@ module ParserTest =
                ColumnDefs =
                  [ { ColumnSummary = None
                      ColumnName = ColumnName ("Id", None)
-                     ColumnType = ({ Type = builtin0 "int"; TypeParameters = [] }, []) }
+                     ColumnType = (builtin0 "int", []) }
                    { ColumnSummary = None
                      ColumnName = ColumnName ("Name", None)
-                     ColumnType = ({ Type = builtin1 "nvarchar" "@1"; TypeParameters = [ "16" ] }, []) } ]
+                     ColumnType = (builtin1 "nvarchar" "16", []) } ]
              }
              { TableSummary = None
                TableName = "DeletedUsers"
@@ -253,10 +261,10 @@ module ParserTest =
                ColumnDefs =
                  [ { ColumnSummary = None
                      ColumnName = ColumnName ("Id", None)
-                     ColumnType = ({ Type = builtin0 "int"; TypeParameters = [] }, []) }
+                     ColumnType = (builtin0 "int", []) }
                    { ColumnSummary = None
                      ColumnName = ColumnName ("UserId", None)
-                     ColumnType = ({ Type = builtin0 "int"; TypeParameters = [] }, []) } ] }
+                     ColumnType = (builtin0 "int", []) } ] }
            ]
 
     [<Test>]
@@ -274,7 +282,7 @@ module ParserTest =
                ColumnDefs =
                  [ { ColumnSummary = None
                      ColumnName = ColumnName ("Id", None)
-                     ColumnType = ({ Type = builtin0 "uniqueidentifier"; TypeParameters = [] }, [SimpleAttr "PK"]) } ]
+                     ColumnType = (builtin0 "uniqueidentifier", [SimpleAttr "PK"]) } ]
              }
            ]
 
@@ -293,7 +301,7 @@ module ParserTest =
                ColumnDefs =
                  [ { ColumnSummary = None
                      ColumnName = ColumnName ("Id", None)
-                     ColumnType = ({ Type = builtin0 "uniqueidentifier"; TypeParameters = [] }, [ComplexAttr ("index", [ Lit "unclustered.IX1.1" ])]) } ]
+                     ColumnType = (builtin0 "uniqueidentifier", [ComplexAttr ("index", [ Lit "unclustered.IX1.1" ])]) } ]
              }
            ]
 
@@ -312,7 +320,7 @@ module ParserTest =
                ColumnDefs =
                  [ { ColumnSummary = None
                      ColumnName = ColumnName ("Id", None)
-                     ColumnType = ({ Type = builtin0 "uniqueidentifier"; TypeParameters = [] },
+                     ColumnType = (builtin0 "uniqueidentifier",
                                    [ ComplexAttr ("PK", [ Lit "unclustered" ])
                                      ComplexAttr ("index", [ Lit "clustered.IX1.1" ])
                                      SimpleAttr "unique" ]) } ]
@@ -334,7 +342,7 @@ module ParserTest =
                ColumnDefs =
                  [ { ColumnSummary = None
                      ColumnName = Wildcard
-                     ColumnType = ({ Type = builtin0 "datetime2"; TypeParameters = [] }, []) } ] } ]
+                     ColumnType = (builtin0 "datetime2", []) } ] } ]
 
     [<Test>]
     let ``nullable`` () =
@@ -353,15 +361,13 @@ module ParserTest =
                ColumnDefs =
                  [ { ColumnSummary = None
                      ColumnName = ColumnName ("Id", None)
-                     ColumnType = ({ Type = builtin0 "int"; TypeParameters = [] }, []) }
+                     ColumnType = (builtin0 "int", []) }
                    { ColumnSummary = None
                      ColumnName = ColumnName ("Name", None)
-                     ColumnType = ({ Type = builtin1 "nullable" "@type"
-                                     TypeParameters = [ "nvarchar(16)" ] }, []) }
+                     ColumnType = (builtin1 "nullable" "nvarchar(16)", []) }
                    { ColumnSummary = None
                      ColumnName = ColumnName ("Age", None)
-                     ColumnType = ({ Type = builtin1 "nullable" "@type"
-                                     TypeParameters = [ "int" ] }, []) } ]
+                     ColumnType = (builtin1 "nullable" "int", []) } ]
              }
            ]
 
@@ -385,10 +391,10 @@ module ParserTest =
                ColumnDefs =
                  [ { ColumnSummary = Some "ID"
                      ColumnName = ColumnName ("Id", Some "ID")
-                     ColumnType = ({ Type = builtin0 "int"; TypeParameters = [] }, []) }
+                     ColumnType = (builtin0 "int", []) }
                    { ColumnSummary = Some "ユーザ名"
                      ColumnName = ColumnName ("Name", Some "名前")
-                     ColumnType = ({ Type = builtin1 "nvarchar" "@1"; TypeParameters = [ "16" ] }, []) } ]
+                     ColumnType = (builtin1 "nvarchar" "16", []) } ]
              }
            ]
 

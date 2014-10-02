@@ -5,28 +5,28 @@ open TableDsl
 open TableDsl.Printer.Primitives
 
 module TableDef =
-  let printNonEnumTypeName (nonEnumType: NonEnumType) typeParams =
+  let printNonEnumTypeName (nonEnumType: NonEnumType) =
     match nonEnumType.TypeParameters with
     | [] -> nonEnumType.TypeName
-    | other -> nonEnumType.TypeName + (printOpenTypeParams typeParams)
+    | other -> nonEnumType.TypeName + (printOpenTypeParams nonEnumType.TypeParameters)
 
-  let printColumnTypeDef col typeParams attrs =
+  let printColumnTypeDef col attrs =
     " " +
       match col.ColumnTypeDef with
-      | BuiltinType typ -> printAttributes (printNonEnumTypeName typ typeParams) attrs
-      | AliasDef (typ, originalType) -> printAttributes (printNonEnumTypeName typ typeParams) attrs
+      | BuiltinType typ -> printAttributes (printNonEnumTypeName typ) attrs
+      | AliasDef (typ, originalType) -> printAttributes (printNonEnumTypeName typ) attrs
       | EnumTypeDef typ -> failwith "Not implemented yet"
 
   let printEnumCases cases =
     cases |> List.map (fun (name, value) -> "  | " + name + " = " + string value) |> Str.join "\n"
 
   let printEnumTypeBody enumType attrs =
-    let baseType = printNonEnumTypeName enumType.BaseType []
+    let baseType = printNonEnumTypeName enumType.BaseType
     "\n" + (printEnumCases enumType.Cases) + "\nbased " + (printAttributes baseType attrs)
 
   let printTypeDef attrs = function
   | BuiltinType _ -> failwith "組み込み型をcoltypeとして出力することはできません。"
-  | AliasDef (typ, originalType) -> (printNonEnumTypeName typ typ.TypeParameters, printColumnTypeDef originalType typ.TypeParameters attrs)
+  | AliasDef (typ, originalType) -> (printNonEnumTypeName typ, printColumnTypeDef originalType attrs)
   | EnumTypeDef typ -> (typ.EnumTypeName, printEnumTypeBody typ attrs)
 
   let printColumnName = function
@@ -34,7 +34,7 @@ module TableDef =
   | ColumnName (name, jpName) -> name + (printJpName jpName)
 
   let printColumnType (typ, attrs) =
-    printColumnTypeDef typ.Type (typ.TypeParameters |> List.map BoundValue) attrs
+    printColumnTypeDef typ attrs
 
   let printColumnDef colDef =
     let summary = printSummary 2 colDef.ColumnSummary

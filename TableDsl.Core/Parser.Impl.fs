@@ -8,13 +8,6 @@ open TableDsl.Parser.Types
 open TableDsl.Parser.Primitives
 
 module internal Impl =
-  let pQuotedTypeParamElem = parse {
-    do! pSkipToken "`"
-    let! elem = many1Chars (noneOf "`")
-    do! pSkipToken "`"
-    return elem
-  }
-
   let pNonQuotedTypeParamElem =
     let rec pNonQuotedTypeParamElem terminators : Parser<string> =
       let p = parse {
@@ -31,11 +24,6 @@ module internal Impl =
       many (attempt p) |>> (fun xs -> System.String.Concat(xs))
     pNonQuotedTypeParamElem [','; ')']
 
-  let pBoundTypeParamElem = (pQuotedTypeParamElem <|> pNonQuotedTypeParamElem) >>= (function "" -> pzero | other -> preturn other)
-
-  let pBoundTypeParam =
-    sepBy pBoundTypeParamElem (pchar ',') |> between (pchar '(') (pchar ')')
-
   let pOpenTypeParamElem =
     pTypeVariableName |>> TypeVariable <|> (pSqlValue |>> BoundValue) // ここはpSqlValueじゃなくて、pSqlTypeか？
 
@@ -47,20 +35,25 @@ module internal Impl =
       env |> List.tryFind (fun (name, paramCount, _, _) -> name = typeName && paramCount = (List.length typeParams)) 
     match resolved with
     | Some (name, paramCount, t, attrs) ->
-        let typ = { ColumnSummary = None; ColumnTypeDef = t; ColumnJpName = None; ColumnAttributes = [] }
+        let typeDef =
+          match t with
+          | BuiltinType ty -> BuiltinType { ty with TypeParameters = typeParams }
+          | AliasDef (ty, originalType) -> AliasDef ({ ty with TypeParameters = typeParams }, originalType)
+          | EnumTypeDef ty -> EnumTypeDef ty
+        let typ = { ColumnSummary = None; ColumnTypeDef = typeDef; ColumnJpName = None; ColumnAttributes = [] }
         preturn (typ, attrs)
     | None -> failFatally (sprintf "%sという型が見つかりませんでした。" typeName)
 
   let pClosedTypeRefWithoutAttributes = parse {
     let! typeName = pName
-    let! typeParams = opt (attempt pBoundTypeParam)
+    let! typeParams = opt (attempt pOpenTypeParam)
     let typeParams =
       match typeParams with
       | None -> []
       | Some x -> x
     let! env = getUserState
     let! typ, attrs = resolveType typeName typeParams env
-    return ({ Type = typ; TypeParameters = typeParams }, attrs)
+    return (typ, attrs)
   }
 
   let pOpenTypeRefWithoutAttributes = parse {

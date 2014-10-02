@@ -7,23 +7,24 @@ module Printer =
   let columnTypeName colTyp =
     match colTyp with
     | BuiltinType typ
-    | AliasDef (typ, _) -> typ.TypeName
+    | AliasDef (typ, _) ->
+        let typeParams =
+          match typ.TypeParameters with
+          | [] -> ""
+          | notEmpty -> "(" + (notEmpty |> List.map (fun (BoundValue v) -> v) |> Str.join ", ") + ")"
+        typ.TypeName + typeParams
     | EnumTypeDef typ -> typ.EnumTypeName
 
-  let printColumnTypeName (typ: ClosedTypeRef) =
-    let typeName = columnTypeName typ.Type.ColumnTypeDef
-    let typeParams =
-      match typ.TypeParameters with
-      | [] -> ""
-      | notEmpty -> "(" + (notEmpty |> Str.join ", ") + ")"
-    typeName + typeParams + " NOT NULL"
+  let printColumnTypeName (typ: ColumnTypeDef) =
+    let typeName = columnTypeName typ.ColumnTypeDef
+    typeName + " NOT NULL"
 
   let printColumnDef col =
     let typ, _ = col.ColumnType
     let name =
       match col.ColumnName with
       | ColumnName (name, _) -> name
-      | Wildcard -> columnTypeName typ.Type.ColumnTypeDef
+      | Wildcard -> columnTypeName typ.ColumnTypeDef
     "[" + name + "] " + (printColumnTypeName typ)
 
   let printCreateTable table =
