@@ -61,6 +61,29 @@ module PrinterTest =
           [Id] int NOT NULL
         , [UserId] int NOT NULL
       );"""
+      """
+      table Users = {
+        Id: { uniqueidentifier with PK }
+      }""", """
+      CREATE TABLE [Users] (
+          [Id] uniqueidentifier NOT NULL
+      );
+      ALTER TABLE [Users] ADD CONSTRAINT [PK_Users] PRIMARY KEY CLUSTERED (
+          [Id]
+      );"""
+      """
+      table Users = {
+        Name: { nvarchar(128) with PK = PK1 }
+        Age: { int with PK = PK1 }
+      }""", """
+      CREATE TABLE [Users] (
+          [Name] nvarchar(128) NOT NULL
+        , [Age] int NOT NULL
+      );
+      ALTER TABLE [Users] ADD CONSTRAINT [PK1_Users] PRIMARY KEY CLUSTERED (
+          [Name]
+        , [Age]
+      );"""
     ]
     |> List.map (fun (a, b) -> (adjust a, adjust b))
 
