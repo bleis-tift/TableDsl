@@ -20,13 +20,22 @@ module AList =
     | [] -> (key, [value])::acc
     add' [] kvs
 
+type ClusteredType = NonClustered | Clustered 
+with
+  override this.ToString() =
+    match this with
+    | NonClustered -> "NONCLUSTERED"
+    | Clustered -> "CLUSTERED"
+
 type AlterTableKey =
   | PrimaryKey of string
   | ForeignKey of string * string
+  | UniqueKey of ClusteredType * string
 
 type AlterTableCol =
   | PrimaryKeyCol of int * string
   | ForeignKeyCol of int * string * string
+  | UniqueKeyCol of int * string
 
 module Printer =
   let printAttributeValue attrValueElems =
@@ -84,12 +93,24 @@ module Printer =
 
   let addAlter tableName acc = function
   | col, SimpleAttr "PK" -> acc |> AList.add (PrimaryKey ("PK_" + tableName)) [PrimaryKeyCol (0, col)]
-  | _col, SimpleAttr _ -> failwith "not implemented"
   | col, ComplexAttr ("PK", value) ->
       let value = printAttributeValue value
       match value.Split([|'.'|], 2) with
       | [| keyNamePrefix; order |] -> acc |> AList.add2 (PrimaryKey (keyNamePrefix + "_" + tableName)) (PrimaryKeyCol (int order, col))
       | [| keyNamePrefix |] -> acc |> AList.add2 (PrimaryKey (keyNamePrefix + "_" + tableName)) (PrimaryKeyCol (0, col))
+      | _ -> assert false; failwith "oops!"
+  | col, SimpleAttr "unique" -> acc |> AList.add (UniqueKey (NonClustered, "UQ_" + tableName)) [UniqueKeyCol (0, col)]
+  | col, ComplexAttr ("unique", value) ->
+      let value = printAttributeValue value
+      match value.Split([|'.'|]) with
+      | [| "clustered" |] -> acc |> AList.add2 (UniqueKey (Clustered, "UQ_" + tableName)) (UniqueKeyCol (0, col))
+      | [| "clustered"; order |] -> acc |> AList.add2 (UniqueKey (Clustered, "UQ_" + tableName)) (UniqueKeyCol (int order, col))
+      | [| "clustered"; keyNamePrefix; order |] -> acc |> AList.add2 (UniqueKey (Clustered, keyNamePrefix + "_" + tableName)) (UniqueKeyCol (int order, col))
+      | [| "nonclustered" |] -> acc |> AList.add2 (UniqueKey (NonClustered, "UQ_" + tableName)) (UniqueKeyCol (0, col))
+      | [| "nonclustered"; order |] -> acc |> AList.add2 (UniqueKey (NonClustered, "UQ_" + tableName)) (UniqueKeyCol (int order, col))
+      | [| "nonclustered"; keyNamePrefix; order |] -> acc |> AList.add2 (UniqueKey (NonClustered, keyNamePrefix + "_" + tableName)) (UniqueKeyCol (int order, col))
+      | [| keyNamePrefix |] -> acc |> AList.add2 (UniqueKey (NonClustered, keyNamePrefix + "_" + tableName)) (UniqueKeyCol (0, col))
+      | [| keyNamePrefix; order |] -> acc |> AList.add2 (UniqueKey (NonClustered, keyNamePrefix + "_" + tableName)) (UniqueKeyCol (int order, col))
       | _ -> assert false; failwith "oops!"
   | col, ComplexAttr ("FK", value) ->
       let value = printAttributeValue value
@@ -101,6 +122,7 @@ module Printer =
       | [| keyNamePrefix; order; parentTable; parentCol |] ->
           acc |> AList.add2 (ForeignKey ((keyNamePrefix + "_" + tableName + "_" + parentTable), parentTable)) (ForeignKeyCol (int order, col, parentCol))
       | _ -> assert false; failwith "oops!"
+  | _col, SimpleAttr _ -> failwith "not implemented"
   | _col, ComplexAttr _ -> failwith "not implemented"
 
   let printCols cols =
@@ -114,6 +136,9 @@ module Printer =
 
   let printFKParentCols cols =
     cols |> List.rev |> List.map (fun (ForeignKeyCol (_, _, col)) -> col) |> printCols
+
+  let printUQCols cols =
+    cols |> List.rev |> List.sortBy (fun (UniqueKeyCol (order, _)) -> order) |> List.map (fun (UniqueKeyCol (_, col)) -> col) |> printCols
 
   let printAlterTable tableDef =
     let alters =
@@ -129,7 +154,10 @@ module Printer =
         | ForeignKey (name, parentTable) ->
             "ALTER TABLE [" + tableDef.TableName + "] ADD CONSTRAINT [" + name + "] FOREIGN KEY (\n" +
               (printFKOwnCols cols) + "\n) REFERENCES [" + parentTable + "] (\n" +
-              (printFKParentCols cols) + "\n) ON UPDATE NO ACTION\n  ON DELETE NO ACTION;")
+              (printFKParentCols cols) + "\n) ON UPDATE NO ACTION\n  ON DELETE NO ACTION;"
+        | UniqueKey (clusteredType, name) ->
+            "ALTER TABLE [" + tableDef.TableName + "] ADD CONSTRAINT [" + name + "] UNIQUE " + (string clusteredType) + " (\n" + (printUQCols cols) + "\n);"
+       )
 
   let printSummaryAndJpName tableDef =
     None

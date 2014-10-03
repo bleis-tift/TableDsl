@@ -167,6 +167,72 @@ module PrinterTest =
                      , [Age]
                    ) ON UPDATE NO ACTION
                      ON DELETE NO ACTION;""" }
+      { Input = """
+                table Users = {
+                  Id: int
+                  Name: { nvarchar(16) with unique }
+                }"""
+        Expected = """
+                   CREATE TABLE [Users] (
+                       [Id] int NOT NULL
+                     , [Name] nvarchar(16) NOT NULL
+                   );
+                   ALTER TABLE [Users] ADD CONSTRAINT [UQ_Users] UNIQUE NONCLUSTERED (
+                       [Name]
+                   );""" }
+      { Input = """
+                table Users = {
+                  Name: { nvarchar(16) with unique = UQ1 }
+                  Age: { int with unique = UQ1; unique = UQ2 }
+                  Hoge: { int with unique = UQ2 }
+                }"""
+        Expected = """
+                   CREATE TABLE [Users] (
+                       [Name] nvarchar(16) NOT NULL
+                     , [Age] int NOT NULL
+                     , [Hoge] int NOT NULL
+                   );
+                   ALTER TABLE [Users] ADD CONSTRAINT [UQ1_Users] UNIQUE NONCLUSTERED (
+                       [Name]
+                     , [Age]
+                   );
+                   ALTER TABLE [Users] ADD CONSTRAINT [UQ2_Users] UNIQUE NONCLUSTERED (
+                       [Age]
+                     , [Hoge]
+                   );""" }
+      { Input = """
+                table Users = {
+                  Name: { nvarchar(16) with unique = UQ1.2 }
+                  Age: { int with unique = UQ1.1; unique = UQ2 }
+                  Hoge: { int with unique = UQ2 }
+                }"""
+        Expected = """
+                   CREATE TABLE [Users] (
+                       [Name] nvarchar(16) NOT NULL
+                     , [Age] int NOT NULL
+                     , [Hoge] int NOT NULL
+                   );
+                   ALTER TABLE [Users] ADD CONSTRAINT [UQ1_Users] UNIQUE NONCLUSTERED (
+                       [Age]
+                     , [Name]
+                   );
+                   ALTER TABLE [Users] ADD CONSTRAINT [UQ2_Users] UNIQUE NONCLUSTERED (
+                       [Age]
+                     , [Hoge]
+                   );""" }
+      { Input = """
+                table Users = {
+                  Id: int
+                  Name: { nvarchar(16) with unique = clustered }
+                }"""
+        Expected = """
+                   CREATE TABLE [Users] (
+                       [Id] int NOT NULL
+                     , [Name] nvarchar(16) NOT NULL
+                   );
+                   ALTER TABLE [Users] ADD CONSTRAINT [UQ_Users] UNIQUE CLUSTERED (
+                       [Name]
+                   );""" }
     ]
     |> List.map (fun { Input = a; Expected = b} -> { Input = adjust a; Expected = adjust b })
 
