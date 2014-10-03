@@ -84,6 +84,19 @@ module PrinterTest =
           [Name]
         , [Age]
       );"""
+      """
+      table Users = {
+        Name: { nvarchar(128) with PK = PK1.2 }
+        Age: { int with PK = PK1.1 }
+      }""", """
+      CREATE TABLE [Users] (
+          [Name] nvarchar(128) NOT NULL
+        , [Age] int NOT NULL
+      );
+      ALTER TABLE [Users] ADD CONSTRAINT [PK1_Users] PRIMARY KEY CLUSTERED (
+          [Age]
+        , [Name]
+      );"""
     ]
     |> List.map (fun (a, b) -> (adjust a, adjust b))
 

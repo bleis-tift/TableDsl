@@ -75,13 +75,18 @@ module Printer =
     seq { yield! attrs' colName typ; for attr in attrs -> (colName, attr) }
 
   let addAlter tableName acc = function
-  | col, SimpleAttr "PK" -> acc |> AList.add ("PK_" + tableName) [col]
+  | col, SimpleAttr "PK" -> acc |> AList.add ("PK_" + tableName) [(0, col)]
   | col, SimpleAttr _ -> failwith "not implemented"
-  | col, ComplexAttr ("PK", value) -> acc |> AList.add2 ((printAttributeValue value) + "_" + tableName) col
+  | col, ComplexAttr ("PK", value) ->
+      let value = printAttributeValue value
+      match value.Split([|'.'|], 2) with
+      | [| keyName; order |] -> acc |> AList.add2 (keyName + "_" + tableName) (int order, col)
+      | [| keyName |] -> acc |> AList.add2 (keyName + "_" + tableName) (0, col)
+      | _ -> assert false; failwith "oops!"
   | col, ComplexAttr _ -> failwith "not implemented"
 
   let printCols cols =
-    "    " + (cols |> List.rev |> List.map (fun col -> "[" + col + "]") |> Str.join "\n  , ")
+    "    " + (cols |> List.rev |> List.sortBy fst |> List.map (fun (_, col) -> "[" + col + "]") |> Str.join "\n  , ")
 
   let printAlterTable tableDef =
     let alters =
