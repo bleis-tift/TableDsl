@@ -26,7 +26,7 @@ type AlterTableKey =
 
 type AlterTableCol =
   | PrimaryKeyCol of int * string
-  | ForeignKeyCol of string * string
+  | ForeignKeyCol of int * string * string
 
 module Printer =
   let printAttributeValue attrValueElems =
@@ -95,7 +95,11 @@ module Printer =
       let value = printAttributeValue value
       match value.Split([|'.'|]) with
       | [| parentTable; parentCol |] ->
-          acc |> AList.add (ForeignKey (("FK_" + tableName + "_" + parentTable), parentTable)) [ForeignKeyCol (col, parentCol)]
+          acc |> AList.add2 (ForeignKey (("FK_" + tableName + "_" + parentTable), parentTable)) (ForeignKeyCol (0, col, parentCol))
+      | [| keyNamePrefix; parentTable; parentCol |] ->
+          acc |> AList.add2 (ForeignKey ((keyNamePrefix + "_" + tableName + "_" + parentTable), parentTable)) (ForeignKeyCol (0, col, parentCol))
+      | [| keyNamePrefix; order; parentTable; parentCol |] ->
+          acc |> AList.add2 (ForeignKey ((keyNamePrefix + "_" + tableName + "_" + parentTable), parentTable)) (ForeignKeyCol (int order, col, parentCol))
       | _ -> assert false; failwith "oops!"
   | _col, ComplexAttr _ -> failwith "not implemented"
 
@@ -106,10 +110,10 @@ module Printer =
     cols |> List.rev |> List.sortBy (fun (PrimaryKeyCol (order, _)) -> order) |> List.map (fun (PrimaryKeyCol (_, col)) -> col) |> printCols
 
   let printFKOwnCols cols =
-    cols |> List.map (fun (ForeignKeyCol (col, _)) -> col) |> printCols
+    cols |> List.rev |> List.map (fun (ForeignKeyCol (_, col, _)) -> col) |> printCols
 
   let printFKParentCols cols =
-    cols |> List.map (fun (ForeignKeyCol (_, col)) -> col) |> printCols
+    cols |> List.rev |> List.map (fun (ForeignKeyCol (_, _, col)) -> col) |> printCols
 
   let printAlterTable tableDef =
     let alters =

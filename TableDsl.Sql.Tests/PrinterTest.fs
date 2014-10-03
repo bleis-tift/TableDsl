@@ -137,6 +137,36 @@ module PrinterTest =
                        [Id]
                    ) ON UPDATE NO ACTION
                      ON DELETE NO ACTION;""" }
+      { Input = """
+                table Users = {
+                  Name: { nvarchar(128) with PK = PK1 }
+                  Age: { int with PK = PK1 }
+                }
+                table DeletedUsers = {
+                  Name: { nvarchar(128) with FK = FK1.1.Users.Name }
+                  Age: { int with FK = FK1.2.Users.Age }
+                }"""
+        Expected = """
+                   CREATE TABLE [Users] (
+                       [Name] nvarchar(128) NOT NULL
+                     , [Age] int NOT NULL
+                   );
+                   CREATE TABLE [DeletedUsers] (
+                       [Name] nvarchar(128) NOT NULL
+                     , [Age] int NOT NULL
+                   );
+                   ALTER TABLE [Users] ADD CONSTRAINT [PK1_Users] PRIMARY KEY CLUSTERED (
+                       [Name]
+                     , [Age]
+                   );
+                   ALTER TABLE [DeletedUsers] ADD CONSTRAINT [FK1_DeletedUsers_Users] FOREIGN KEY (
+                       [Name]
+                     , [Age]
+                   ) REFERENCES [Users] (
+                       [Name]
+                     , [Age]
+                   ) ON UPDATE NO ACTION
+                     ON DELETE NO ACTION;""" }
     ]
     |> List.map (fun { Input = a; Expected = b} -> { Input = adjust a; Expected = adjust b })
 
