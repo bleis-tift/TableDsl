@@ -20,6 +20,14 @@ module AList =
     | [] -> (key, [value])::acc
     add' [] kvs
 
+type AlterTableKey =
+  | PrimaryKey of string
+  | ForeignKey of string * string
+
+type AlterTableCol =
+  | PrimaryKeyCol of int * string
+  | ForeignKeyCol of string * string
+
 module Printer =
   let printAttributeValue attrValueElems =
     let printAttrValueElem = function
@@ -75,18 +83,33 @@ module Printer =
     seq { yield! attrs' colName typ; for attr in attrs -> (colName, attr) }
 
   let addAlter tableName acc = function
-  | col, SimpleAttr "PK" -> acc |> AList.add ("PK_" + tableName) [(0, col)]
-  | col, SimpleAttr _ -> failwith "not implemented"
+  | col, SimpleAttr "PK" -> acc |> AList.add (PrimaryKey ("PK_" + tableName)) [PrimaryKeyCol (0, col)]
+  | _col, SimpleAttr _ -> failwith "not implemented"
   | col, ComplexAttr ("PK", value) ->
       let value = printAttributeValue value
       match value.Split([|'.'|], 2) with
-      | [| keyName; order |] -> acc |> AList.add2 (keyName + "_" + tableName) (int order, col)
-      | [| keyName |] -> acc |> AList.add2 (keyName + "_" + tableName) (0, col)
+      | [| keyNamePrefix; order |] -> acc |> AList.add2 (PrimaryKey (keyNamePrefix + "_" + tableName)) (PrimaryKeyCol (int order, col))
+      | [| keyNamePrefix |] -> acc |> AList.add2 (PrimaryKey (keyNamePrefix + "_" + tableName)) (PrimaryKeyCol (0, col))
       | _ -> assert false; failwith "oops!"
-  | col, ComplexAttr _ -> failwith "not implemented"
+  | col, ComplexAttr ("FK", value) ->
+      let value = printAttributeValue value
+      match value.Split([|'.'|]) with
+      | [| parentTable; parentCol |] ->
+          acc |> AList.add (ForeignKey (("FK_" + tableName + "_" + parentTable), parentTable)) [ForeignKeyCol (col, parentCol)]
+      | _ -> assert false; failwith "oops!"
+  | _col, ComplexAttr _ -> failwith "not implemented"
 
   let printCols cols =
-    "    " + (cols |> List.rev |> List.sortBy fst |> List.map (fun (_, col) -> "[" + col + "]") |> Str.join "\n  , ")
+    "    " + (cols |> List.map (fun col -> "[" + col + "]") |> Str.join "\n  , ")
+
+  let printPKCols cols =
+    cols |> List.rev |> List.sortBy (fun (PrimaryKeyCol (order, _)) -> order) |> List.map (fun (PrimaryKeyCol (_, col)) -> col) |> printCols
+
+  let printFKOwnCols cols =
+    cols |> List.map (fun (ForeignKeyCol (col, _)) -> col) |> printCols
+
+  let printFKParentCols cols =
+    cols |> List.map (fun (ForeignKeyCol (_, col)) -> col) |> printCols
 
   let printAlterTable tableDef =
     let alters =
@@ -95,7 +118,14 @@ module Printer =
       |> Seq.fold (addAlter tableDef.TableName) []
 
     alters
-    |> List.map (fun (name, cols) -> "ALTER TABLE [" + tableDef.TableName + "] ADD CONSTRAINT [" + name + "] PRIMARY KEY CLUSTERED (\n" + (printCols cols) + "\n);")
+    |> List.map (fun (key, cols) ->
+        match key with
+        | PrimaryKey name ->
+            "ALTER TABLE [" + tableDef.TableName + "] ADD CONSTRAINT [" + name + "] PRIMARY KEY CLUSTERED (\n" + (printPKCols cols) + "\n);"
+        | ForeignKey (name, parentTable) ->
+            "ALTER TABLE [" + tableDef.TableName + "] ADD CONSTRAINT [" + name + "] FOREIGN KEY (\n" +
+              (printFKOwnCols cols) + "\n) REFERENCES [" + parentTable + "] (\n" +
+              (printFKParentCols cols) + "\n) ON UPDATE NO ACTION\n  ON DELETE NO ACTION;")
 
   let printSummaryAndJpName tableDef =
     None

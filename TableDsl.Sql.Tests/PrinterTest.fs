@@ -107,6 +107,36 @@ module PrinterTest =
                        [Age]
                      , [Name]
                    );""" }
+      { Input = """
+                table Users = {
+                  Id: { uniqueidentifier with PK }
+                  Name: nvarchar(128)
+                }
+                table DeletedUsers = {
+                  Id: { uniqueidentifier with PK }
+                  UserId: { uniqueidentifier with FK = Users.Id }
+                }"""
+        Expected = """
+                   CREATE TABLE [Users] (
+                       [Id] uniqueidentifier NOT NULL
+                     , [Name] nvarchar(128) NOT NULL
+                   );
+                   CREATE TABLE [DeletedUsers] (
+                       [Id] uniqueidentifier NOT NULL
+                     , [UserId] uniqueidentifier NOT NULL
+                   );
+                   ALTER TABLE [Users] ADD CONSTRAINT [PK_Users] PRIMARY KEY CLUSTERED (
+                       [Id]
+                   );
+                   ALTER TABLE [DeletedUsers] ADD CONSTRAINT [PK_DeletedUsers] PRIMARY KEY CLUSTERED (
+                       [Id]
+                   );
+                   ALTER TABLE [DeletedUsers] ADD CONSTRAINT [FK_DeletedUsers_Users] FOREIGN KEY (
+                       [UserId]
+                   ) REFERENCES [Users] (
+                       [Id]
+                   ) ON UPDATE NO ACTION
+                     ON DELETE NO ACTION;""" }
     ]
     |> List.map (fun { Input = a; Expected = b} -> { Input = adjust a; Expected = adjust b })
 
