@@ -78,18 +78,19 @@ module Printer =
 
     attrValueElems |> List.map printAttrValueElem |> Str.concat
 
-  let columnTypeName colTyp =
+  let rec columnTypeName colTyp =
     match colTyp with
     | BuiltinType { TypeName = "nullable"; TypeParameters = typeParams } ->
         let innerTypeName = typeParams |> List.map (fun (BoundValue v) -> v) |> Str.concat
         (innerTypeName, " NULL")
-    | BuiltinType typ
-    | AliasDef (typ, _) ->
+    | BuiltinType typ ->
         let typeParams =
           match typ.TypeParameters with
           | [] -> ""
           | notEmpty -> "(" + (notEmpty |> List.map (fun (BoundValue v) -> v) |> Str.join ", ") + ")"
         (typ.TypeName + typeParams, " NOT NULL")
+    | AliasDef (_typ, orgType) ->
+        columnTypeName orgType.ColumnTypeDef
     | EnumTypeDef typ -> (typ.EnumTypeName, " NOT NULL")
 
   let printCollate attrs =
@@ -108,7 +109,11 @@ module Printer =
     let name =
       match col.ColumnName with
       | ColumnName (name, _) -> name
-      | Wildcard -> columnTypeName typ.ColumnTypeDef |> fst
+      | Wildcard ->
+          match typ.ColumnTypeDef with
+          | BuiltinType { TypeName = name }
+          | AliasDef ({ TypeName = name }, _)
+          | EnumTypeDef { EnumTypeName = name } -> name
     "[" + name + "] " + (printColumnTypeName attrs typ)
 
   let printCreateTable table =
@@ -130,7 +135,7 @@ module Printer =
     let typ, attrs = colDef.ColumnType
     let colName =
       match colDef.ColumnName with
-      | Wildcard -> failwith "not implemented"
+      | Wildcard -> columnTypeName typ.ColumnTypeDef |> fst
       | ColumnName (name, _) -> name
     seq { yield! attrs' colName typ; for attr in attrs -> (colName, attr) }
 

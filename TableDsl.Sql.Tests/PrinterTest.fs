@@ -51,6 +51,20 @@ module PrinterTest =
                        [Id] int NOT NULL
                      , [Name] nvarchar(16) NOT NULL
                    );""" }
+      // ワイルドカード
+      { Input = """
+                coltype Created = datetime2
+                table Users = {
+                  Id: int
+                  Name: nvarchar(16)
+                  _: Created
+                }"""
+        Expected = """
+                   CREATE TABLE [Users] (
+                       [Id] int NOT NULL
+                     , [Name] nvarchar(16) NOT NULL
+                     , [Created] datetime2 NOT NULL
+                   );""" }
       // 2つのテーブル
       { Input = """
                 table Users = {
