@@ -27,6 +27,35 @@ with
     | NonClustered -> "NONCLUSTERED"
     | Clustered -> "CLUSTERED"
 
+type LayoutOrder = Asc | Desc
+with
+  override this.ToString() =
+    match this with
+    | Asc -> "ASC"
+    | Desc -> "Desc"
+
+type IndexInfo = {
+  ClusteredType: ClusteredType
+  KeyNamePrefix: string
+  ColumnIndex: int
+  LayoutOrder: LayoutOrder
+}
+with
+  override this.ToString() =
+    (string this.ClusteredType) + "." + this.KeyNamePrefix + "." + (string this.ColumnIndex) + "." + (string this.LayoutOrder)
+    
+module PrimaryKey =
+  let defaultIndexInfo =
+    { ClusteredType = Clustered; KeyNamePrefix = "PK"; ColumnIndex = 0; LayoutOrder = Asc }
+
+module UniqueKey =
+  let defaultIndexInfo =
+    { ClusteredType = NonClustered; KeyNamePrefix = "UQ"; ColumnIndex = 0; LayoutOrder = Asc }
+
+module Index =
+  let defaultIndexInfo =
+    { ClusteredType = NonClustered; KeyNamePrefix = "IX"; ColumnIndex = 0; LayoutOrder = Asc }
+
 type AlterTableKey =
   | PrimaryKey of ClusteredType * string
   | ForeignKey of string * string
@@ -105,33 +134,46 @@ module Printer =
       | ColumnName (name, _) -> name
     seq { yield! attrs' colName typ; for attr in attrs -> (colName, attr) }
 
+  let indexInfo defaultInfo (value: string) =
+    let int str =
+      try int str with
+      | e -> raise (System.FormatException(str + " can't convert to int.", e))
+    match value.Split([|'.'|]) with
+    | [| "clustered" |] -> { defaultInfo with ClusteredType = Clustered }
+    | [| "clustered"; "asc" |] -> { defaultInfo with ClusteredType = Clustered; LayoutOrder = Asc }
+    | [| "clustered"; "desc" |] -> { defaultInfo with ClusteredType = Clustered; LayoutOrder = Desc }
+    | [| "clustered"; keyNamePrefix |] -> { defaultInfo with ClusteredType = Clustered; KeyNamePrefix = keyNamePrefix }
+    | [| "clustered"; keyNamePrefix; index |] -> { defaultInfo with ClusteredType = Clustered; KeyNamePrefix = keyNamePrefix; ColumnIndex = int index }
+    | [| "clustered"; keyNamePrefix; index; "asc" |] -> { defaultInfo with ClusteredType = Clustered; KeyNamePrefix = keyNamePrefix; ColumnIndex = int index; LayoutOrder = Asc }
+    | [| "clustered"; keyNamePrefix; index; "desc" |] -> { defaultInfo with ClusteredType = Clustered; KeyNamePrefix = keyNamePrefix; ColumnIndex = int index; LayoutOrder = Desc }
+    | [| "nonclustered" |] -> { defaultInfo with ClusteredType = NonClustered }
+    | [| "nonclustered"; "asc" |] -> { defaultInfo with ClusteredType = NonClustered; LayoutOrder = Asc }
+    | [| "nonclustered"; "desc" |] -> { defaultInfo with ClusteredType = NonClustered; LayoutOrder = Desc }
+    | [| "nonclustered"; keyNamePrefix |] -> { defaultInfo with ClusteredType = NonClustered; KeyNamePrefix = keyNamePrefix }
+    | [| "nonclustered"; keyNamePrefix; index |] -> { defaultInfo with ClusteredType = NonClustered; KeyNamePrefix = keyNamePrefix; ColumnIndex = int index }
+    | [| "nonclustered"; keyNamePrefix; index; "asc" |] -> { defaultInfo with ClusteredType = NonClustered; KeyNamePrefix = keyNamePrefix; ColumnIndex = int index; LayoutOrder = Asc }
+    | [| "nonclustered"; keyNamePrefix; index; "desc" |] -> { defaultInfo with ClusteredType = NonClustered; KeyNamePrefix = keyNamePrefix; ColumnIndex = int index; LayoutOrder = Desc }
+    | [| "asc" |] -> { defaultInfo with LayoutOrder = Asc }
+    | [| "desc" |] -> { defaultInfo with LayoutOrder = Desc }
+    | [| keyNamePrefix |] -> { defaultInfo with KeyNamePrefix = keyNamePrefix }
+    | [| keyNamePrefix; "asc" |] -> { defaultInfo with KeyNamePrefix = keyNamePrefix; LayoutOrder = Asc }
+    | [| keyNamePrefix; "desc" |] -> { defaultInfo with KeyNamePrefix = keyNamePrefix; LayoutOrder = Desc }
+    | [| keyNamePrefix; index |] -> { defaultInfo with KeyNamePrefix = keyNamePrefix; ColumnIndex = int index }
+    | [| keyNamePrefix; index; "asc" |] -> { defaultInfo with KeyNamePrefix = keyNamePrefix; ColumnIndex = int index; LayoutOrder = Asc }
+    | [| keyNamePrefix; index; "desc" |] -> { defaultInfo with KeyNamePrefix = keyNamePrefix; ColumnIndex = int index; LayoutOrder = Desc }
+    | _ -> assert false; defaultInfo
+
   let addAlter tableName acc = function
   | col, SimpleAttr "PK" -> acc |> AList.add (PrimaryKey (Clustered, "PK_" + tableName)) [PrimaryKeyCol (0, col)]
   | col, ComplexAttr ("PK", value) ->
       let value = printAttributeValue value
-      match value.Split([|'.'|], 2) with
-      | [| "clustered" |] -> acc |> AList.add2 (PrimaryKey (Clustered, "PK_" + tableName)) (PrimaryKeyCol (0, col))
-      | [| "clustered"; order |] -> acc |> AList.add2 (PrimaryKey (Clustered, "PK_" + tableName)) (PrimaryKeyCol (int order, col))
-      | [| "clustered"; keyNamePrefix; order |] -> acc |> AList.add2 (PrimaryKey (Clustered, keyNamePrefix + "_" + tableName)) (PrimaryKeyCol (int order, col))
-      | [| "nonclustered" |] -> acc |> AList.add2 (PrimaryKey (NonClustered, "PK_" + tableName)) (PrimaryKeyCol (0, col))
-      | [| "nonclustered"; order |] -> acc |> AList.add2 (PrimaryKey (NonClustered, "PK_" + tableName)) (PrimaryKeyCol (int order, col))
-      | [| "nonclustered"; keyNamePrefix; order |] -> acc |> AList.add2 (PrimaryKey (NonClustered, keyNamePrefix + "_" + tableName)) (PrimaryKeyCol (int order, col))
-      | [| keyNamePrefix |] -> acc |> AList.add2 (PrimaryKey (Clustered, keyNamePrefix + "_" + tableName)) (PrimaryKeyCol (0, col))
-      | [| keyNamePrefix; order |] -> acc |> AList.add2 (PrimaryKey (Clustered, keyNamePrefix + "_" + tableName)) (PrimaryKeyCol (int order, col))
-      | _ -> assert false; failwith "oops!"
+      let indexInfo = indexInfo PrimaryKey.defaultIndexInfo value
+      acc |> AList.add2 (PrimaryKey (indexInfo.ClusteredType, indexInfo.KeyNamePrefix + "_" + tableName)) (PrimaryKeyCol (indexInfo.ColumnIndex, col))
   | col, SimpleAttr "unique" -> acc |> AList.add (UniqueKey (NonClustered, "UQ_" + tableName)) [UniqueKeyCol (0, col)]
   | col, ComplexAttr ("unique", value) ->
       let value = printAttributeValue value
-      match value.Split([|'.'|]) with
-      | [| "clustered" |] -> acc |> AList.add2 (UniqueKey (Clustered, "UQ_" + tableName)) (UniqueKeyCol (0, col))
-      | [| "clustered"; order |] -> acc |> AList.add2 (UniqueKey (Clustered, "UQ_" + tableName)) (UniqueKeyCol (int order, col))
-      | [| "clustered"; keyNamePrefix; order |] -> acc |> AList.add2 (UniqueKey (Clustered, keyNamePrefix + "_" + tableName)) (UniqueKeyCol (int order, col))
-      | [| "nonclustered" |] -> acc |> AList.add2 (UniqueKey (NonClustered, "UQ_" + tableName)) (UniqueKeyCol (0, col))
-      | [| "nonclustered"; order |] -> acc |> AList.add2 (UniqueKey (NonClustered, "UQ_" + tableName)) (UniqueKeyCol (int order, col))
-      | [| "nonclustered"; keyNamePrefix; order |] -> acc |> AList.add2 (UniqueKey (NonClustered, keyNamePrefix + "_" + tableName)) (UniqueKeyCol (int order, col))
-      | [| keyNamePrefix |] -> acc |> AList.add2 (UniqueKey (NonClustered, keyNamePrefix + "_" + tableName)) (UniqueKeyCol (0, col))
-      | [| keyNamePrefix; order |] -> acc |> AList.add2 (UniqueKey (NonClustered, keyNamePrefix + "_" + tableName)) (UniqueKeyCol (int order, col))
-      | _ -> assert false; failwith "oops!"
+      let indexInfo = indexInfo UniqueKey.defaultIndexInfo value
+      acc |> AList.add2 (UniqueKey (indexInfo.ClusteredType, indexInfo.KeyNamePrefix + "_" + tableName)) (UniqueKeyCol (indexInfo.ColumnIndex, col))
   | col, ComplexAttr ("FK", value) ->
       let value = printAttributeValue value
       match value.Split([|'.'|]) with
@@ -146,16 +188,8 @@ module Printer =
       acc |> AList.add2 (Index (NonClustered, "IX_" + tableName)) (IndexCol (0, col))
   | col, ComplexAttr ("index", value) ->
       let value = printAttributeValue value
-      match value.Split([|'.'|]) with
-      | [| "clustered" |] -> acc |> AList.add2 (Index (Clustered, "IX_" + tableName)) (IndexCol (0, col))
-      | [| "clustered"; order |] -> acc |> AList.add2 (Index (Clustered, "IX_" + tableName)) (IndexCol (int order, col))
-      | [| "clustered"; keyNamePrefix; order |] -> acc |> AList.add2 (Index (Clustered, keyNamePrefix + "_" + tableName)) (IndexCol (int order, col))
-      | [| "nonclustered" |] -> acc |> AList.add2 (Index (NonClustered, "IX_" + tableName)) (IndexCol (0, col))
-      | [| "nonclustered"; order |] -> acc |> AList.add2 (Index (NonClustered, "IX_" + tableName)) (IndexCol (int order, col))
-      | [| "nonclustered"; keyNamePrefix; order |] -> acc |> AList.add2 (Index (NonClustered, keyNamePrefix + "_" + tableName)) (IndexCol (int order, col))
-      | [| keyNamePrefix |] -> acc |> AList.add2 (Index (NonClustered, keyNamePrefix + "_" + tableName)) (IndexCol (0, col))
-      | [| keyNamePrefix; order |] -> acc |> AList.add2 (Index (NonClustered, keyNamePrefix + "_" + tableName)) (IndexCol (int order, col))
-      | _ -> assert false; failwith "oops!"
+      let indexInfo = indexInfo Index.defaultIndexInfo value
+      acc |> AList.add2 (Index (indexInfo.ClusteredType, indexInfo.KeyNamePrefix + "_" + tableName)) (IndexCol (indexInfo.ColumnIndex, col))
   | col, ComplexAttr ("default", value) ->
       let value = printAttributeValue value
       acc |> AList.add (Default ("DF_" + tableName + "_" + col)) [DefaultCol (col, value)]
