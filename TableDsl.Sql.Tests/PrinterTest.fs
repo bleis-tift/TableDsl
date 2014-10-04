@@ -174,6 +174,23 @@ module PrinterTest =
                      , [Age]
                    ) ON UPDATE NO ACTION
                      ON DELETE NO ACTION;""" }
+      // INDEX
+      { Input = """
+                table Users = {
+                  Id: int
+                  Name: { nvarchar(16) with index = IX1 }
+                  Age: { int with index = IX1 }
+                }"""
+        Expected = """
+                   CREATE TABLE [Users] (
+                       [Id] int NOT NULL
+                     , [Name] nvarchar(16) NOT NULL
+                     , [Age] int NOT NULL
+                   );
+                   CREATE NONCLUSTERED INDEX [IX1_Users] ON [Users] (
+                       [Name]
+                     , [Age]
+                   );""" }
       // UNIQUE制約
       { Input = """
                 table Users = {

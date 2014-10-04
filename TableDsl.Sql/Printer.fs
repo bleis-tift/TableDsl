@@ -31,12 +31,14 @@ type AlterTableKey =
   | PrimaryKey of ClusteredType * string
   | ForeignKey of string * string
   | UniqueKey of ClusteredType * string
+  | Index of ClusteredType * string
   | Default of string
 
 type AlterTableCol =
   | PrimaryKeyCol of int * string
   | ForeignKeyCol of int * string * string
   | UniqueKeyCol of int * string
+  | IndexCol of int * string
   | DefaultCol of string * string
 
 module Printer =
@@ -137,6 +139,20 @@ module Printer =
       | [| keyNamePrefix; order; parentTable; parentCol |] ->
           acc |> AList.add2 (ForeignKey ((keyNamePrefix + "_" + tableName + "_" + parentTable), parentTable)) (ForeignKeyCol (int order, col, parentCol))
       | _ -> assert false; failwith "oops!"
+  | col, SimpleAttr "index" ->
+      acc |> AList.add2 (Index (NonClustered, "IX_" + tableName)) (IndexCol (0, col))
+  | col, ComplexAttr ("index", value) ->
+      let value = printAttributeValue value
+      match value.Split([|'.'|]) with
+      | [| "clustered" |] -> acc |> AList.add2 (Index (Clustered, "IX_" + tableName)) (IndexCol (0, col))
+      | [| "clustered"; order |] -> acc |> AList.add2 (Index (Clustered, "IX_" + tableName)) (IndexCol (int order, col))
+      | [| "clustered"; keyNamePrefix; order |] -> acc |> AList.add2 (Index (Clustered, keyNamePrefix + "_" + tableName)) (IndexCol (int order, col))
+      | [| "nonclustered" |] -> acc |> AList.add2 (Index (NonClustered, "IX_" + tableName)) (IndexCol (0, col))
+      | [| "nonclustered"; order |] -> acc |> AList.add2 (Index (NonClustered, "IX_" + tableName)) (IndexCol (int order, col))
+      | [| "nonclustered"; keyNamePrefix; order |] -> acc |> AList.add2 (Index (NonClustered, keyNamePrefix + "_" + tableName)) (IndexCol (int order, col))
+      | [| keyNamePrefix |] -> acc |> AList.add2 (Index (NonClustered, keyNamePrefix + "_" + tableName)) (IndexCol (0, col))
+      | [| keyNamePrefix; order |] -> acc |> AList.add2 (Index (NonClustered, keyNamePrefix + "_" + tableName)) (IndexCol (int order, col))
+      | _ -> assert false; failwith "oops!"
   | col, ComplexAttr ("default", value) ->
       let value = printAttributeValue value
       acc |> AList.add (Default ("DF_" + tableName + "_" + col)) [DefaultCol (col, value)]
@@ -159,6 +175,9 @@ module Printer =
   let printUQCols cols =
     cols |> List.rev |> List.sortBy (fun (UniqueKeyCol (order, _)) -> order) |> List.map (fun (UniqueKeyCol (_, col)) -> col) |> printCols
 
+  let printIXCols cols =
+    cols |> List.rev |> List.sortBy (fun (IndexCol (order, _)) -> order) |> List.map (fun (IndexCol (_, col)) -> col) |> printCols
+
   let printAlterTable tableDef =
     let alters =
       tableDef.ColumnDefs
@@ -176,6 +195,8 @@ module Printer =
               (printFKParentCols cols) + "\n) ON UPDATE NO ACTION\n  ON DELETE NO ACTION;"
         | UniqueKey (clusteredType, name) ->
             "ALTER TABLE [" + tableDef.TableName + "] ADD CONSTRAINT [" + name + "] UNIQUE " + (string clusteredType) + " (\n" + (printUQCols cols) + "\n);"
+        | Index (clusteredType, name) ->
+            "CREATE " + (string clusteredType) + " INDEX [" + name + "] ON [" + tableDef.TableName + "] (\n" + (printIXCols cols) + "\n);"
         | Default name ->
             let col, value = cols |> List.map (fun (DefaultCol (c, v)) -> (c, v)) |> List.head
             "ALTER TABLE [" + tableDef.TableName + "] ADD CONSTRAINT [" + name + "] DEFAULT (" + value + ") FOR [" + col + "];"
