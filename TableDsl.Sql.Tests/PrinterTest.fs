@@ -233,6 +233,17 @@ module PrinterTest =
                    ALTER TABLE [Users] ADD CONSTRAINT [UQ_Users] UNIQUE CLUSTERED (
                        [Name]
                    );""" }
+      { Input = """
+                table Users = {
+                  Name: nvarchar(128)
+                  Age: { int with default = 42 }
+                }"""
+        Expected = """
+                   CREATE TABLE [Users] (
+                       [Name] nvarchar(128) NOT NULL
+                     , [Age] int NOT NULL
+                   );
+                   ALTER TABLE [Users] ADD CONSTRAINT [DF_Users_Age] DEFAULT (42) FOR [Age];""" }
     ]
     |> List.map (fun { Input = a; Expected = b} -> { Input = adjust a; Expected = adjust b })
 

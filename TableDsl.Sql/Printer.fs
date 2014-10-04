@@ -31,11 +31,13 @@ type AlterTableKey =
   | PrimaryKey of ClusteredType * string
   | ForeignKey of string * string
   | UniqueKey of ClusteredType * string
+  | Default of string
 
 type AlterTableCol =
   | PrimaryKeyCol of int * string
   | ForeignKeyCol of int * string * string
   | UniqueKeyCol of int * string
+  | DefaultCol of string * string
 
 module Printer =
   let printAttributeValue attrValueElems =
@@ -128,6 +130,9 @@ module Printer =
       | [| keyNamePrefix; order; parentTable; parentCol |] ->
           acc |> AList.add2 (ForeignKey ((keyNamePrefix + "_" + tableName + "_" + parentTable), parentTable)) (ForeignKeyCol (int order, col, parentCol))
       | _ -> assert false; failwith "oops!"
+  | col, ComplexAttr ("default", value) ->
+      let value = printAttributeValue value
+      acc |> AList.add (Default ("DF_" + tableName + "_" + col)) [DefaultCol (col, value)]
   | _col, SimpleAttr _ -> failwith "not implemented"
   | _col, ComplexAttr _ -> failwith "not implemented"
 
@@ -163,6 +168,9 @@ module Printer =
               (printFKParentCols cols) + "\n) ON UPDATE NO ACTION\n  ON DELETE NO ACTION;"
         | UniqueKey (clusteredType, name) ->
             "ALTER TABLE [" + tableDef.TableName + "] ADD CONSTRAINT [" + name + "] UNIQUE " + (string clusteredType) + " (\n" + (printUQCols cols) + "\n);"
+        | Default name ->
+            let col, value = cols |> List.map (fun (DefaultCol (c, v)) -> (c, v)) |> List.head
+            "ALTER TABLE [" + tableDef.TableName + "] ADD CONSTRAINT [" + name + "] DEFAULT (" + value + ") FOR [" + col + "];"
        )
 
   let printSummaryAndJpName tableDef =
