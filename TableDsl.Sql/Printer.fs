@@ -28,7 +28,7 @@ with
     | Clustered -> "CLUSTERED"
 
 type AlterTableKey =
-  | PrimaryKey of string
+  | PrimaryKey of ClusteredType * string
   | ForeignKey of string * string
   | UniqueKey of ClusteredType * string
 
@@ -92,12 +92,18 @@ module Printer =
     seq { yield! attrs' colName typ; for attr in attrs -> (colName, attr) }
 
   let addAlter tableName acc = function
-  | col, SimpleAttr "PK" -> acc |> AList.add (PrimaryKey ("PK_" + tableName)) [PrimaryKeyCol (0, col)]
+  | col, SimpleAttr "PK" -> acc |> AList.add (PrimaryKey (Clustered, "PK_" + tableName)) [PrimaryKeyCol (0, col)]
   | col, ComplexAttr ("PK", value) ->
       let value = printAttributeValue value
       match value.Split([|'.'|], 2) with
-      | [| keyNamePrefix; order |] -> acc |> AList.add2 (PrimaryKey (keyNamePrefix + "_" + tableName)) (PrimaryKeyCol (int order, col))
-      | [| keyNamePrefix |] -> acc |> AList.add2 (PrimaryKey (keyNamePrefix + "_" + tableName)) (PrimaryKeyCol (0, col))
+      | [| "clustered" |] -> acc |> AList.add2 (PrimaryKey (Clustered, "PK_" + tableName)) (PrimaryKeyCol (0, col))
+      | [| "clustered"; order |] -> acc |> AList.add2 (PrimaryKey (Clustered, "PK_" + tableName)) (PrimaryKeyCol (int order, col))
+      | [| "clustered"; keyNamePrefix; order |] -> acc |> AList.add2 (PrimaryKey (Clustered, keyNamePrefix + "_" + tableName)) (PrimaryKeyCol (int order, col))
+      | [| "nonclustered" |] -> acc |> AList.add2 (PrimaryKey (NonClustered, "PK_" + tableName)) (PrimaryKeyCol (0, col))
+      | [| "nonclustered"; order |] -> acc |> AList.add2 (PrimaryKey (NonClustered, "PK_" + tableName)) (PrimaryKeyCol (int order, col))
+      | [| "nonclustered"; keyNamePrefix; order |] -> acc |> AList.add2 (PrimaryKey (NonClustered, keyNamePrefix + "_" + tableName)) (PrimaryKeyCol (int order, col))
+      | [| keyNamePrefix |] -> acc |> AList.add2 (PrimaryKey (Clustered, keyNamePrefix + "_" + tableName)) (PrimaryKeyCol (0, col))
+      | [| keyNamePrefix; order |] -> acc |> AList.add2 (PrimaryKey (Clustered, keyNamePrefix + "_" + tableName)) (PrimaryKeyCol (int order, col))
       | _ -> assert false; failwith "oops!"
   | col, SimpleAttr "unique" -> acc |> AList.add (UniqueKey (NonClustered, "UQ_" + tableName)) [UniqueKeyCol (0, col)]
   | col, ComplexAttr ("unique", value) ->
@@ -149,8 +155,8 @@ module Printer =
     alters
     |> List.map (fun (key, cols) ->
         match key with
-        | PrimaryKey name ->
-            "ALTER TABLE [" + tableDef.TableName + "] ADD CONSTRAINT [" + name + "] PRIMARY KEY CLUSTERED (\n" + (printPKCols cols) + "\n);"
+        | PrimaryKey (clusteredType, name) ->
+            "ALTER TABLE [" + tableDef.TableName + "] ADD CONSTRAINT [" + name + "] PRIMARY KEY " + (string clusteredType) + " (\n" + (printPKCols cols) + "\n);"
         | ForeignKey (name, parentTable) ->
             "ALTER TABLE [" + tableDef.TableName + "] ADD CONSTRAINT [" + name + "] FOREIGN KEY (\n" +
               (printFKOwnCols cols) + "\n) REFERENCES [" + parentTable + "] (\n" +
