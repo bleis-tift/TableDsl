@@ -40,6 +40,7 @@ module PrinterTest =
 
   let source =
     [
+      // 単純な例
       { Input = """
                 table Users = {
                   Id: int
@@ -50,6 +51,7 @@ module PrinterTest =
                        [Id] int NOT NULL
                      , [Name] nvarchar(16) NOT NULL
                    );""" }
+      // 2つのテーブル
       { Input = """
                 table Users = {
                   Id: int
@@ -68,6 +70,7 @@ module PrinterTest =
                        [Id] int NOT NULL
                      , [UserId] int NOT NULL
                    );""" }
+      // 単純なPK
       { Input = """
                 table Users = {
                   Id: { uniqueidentifier with PK }
@@ -79,6 +82,7 @@ module PrinterTest =
                    ALTER TABLE [Users] ADD CONSTRAINT [PK_Users] PRIMARY KEY CLUSTERED (
                        [Id]
                    );""" }
+      // 複数列でPK
       { Input = """
                 table Users = {
                   Name: { nvarchar(128) with PK = PK1 }
@@ -93,6 +97,7 @@ module PrinterTest =
                        [Name]
                      , [Age]
                    );""" }
+      // 複数列でPK(順番指定)
       { Input = """
                 table Users = {
                   Name: { nvarchar(128) with PK = PK1.2 }
@@ -107,6 +112,7 @@ module PrinterTest =
                        [Age]
                      , [Name]
                    );""" }
+      // FK
       { Input = """
                 table Users = {
                   Id: { uniqueidentifier with PK }
@@ -137,6 +143,7 @@ module PrinterTest =
                        [Id]
                    ) ON UPDATE NO ACTION
                      ON DELETE NO ACTION;""" }
+      // 複数列でFK
       { Input = """
                 table Users = {
                   Name: { nvarchar(128) with PK = PK1 }
@@ -167,6 +174,7 @@ module PrinterTest =
                      , [Age]
                    ) ON UPDATE NO ACTION
                      ON DELETE NO ACTION;""" }
+      // UNIQUE制約
       { Input = """
                 table Users = {
                   Id: int
@@ -180,6 +188,7 @@ module PrinterTest =
                    ALTER TABLE [Users] ADD CONSTRAINT [UQ_Users] UNIQUE NONCLUSTERED (
                        [Name]
                    );""" }
+      // 複数列でUNIQUE制約
       { Input = """
                 table Users = {
                   Name: { nvarchar(16) with unique = UQ1 }
@@ -200,6 +209,7 @@ module PrinterTest =
                        [Age]
                      , [Hoge]
                    );""" }
+      // 複数列でUNIQUE制約(順番指定)
       { Input = """
                 table Users = {
                   Name: { nvarchar(16) with unique = UQ1.2 }
@@ -220,6 +230,7 @@ module PrinterTest =
                        [Age]
                      , [Hoge]
                    );""" }
+      // UNIQUE制約(クラスタ化)
       { Input = """
                 table Users = {
                   Id: int
@@ -233,6 +244,7 @@ module PrinterTest =
                    ALTER TABLE [Users] ADD CONSTRAINT [UQ_Users] UNIQUE CLUSTERED (
                        [Name]
                    );""" }
+      // DEFAULT制約
       { Input = """
                 table Users = {
                   Name: nvarchar(128)
@@ -244,6 +256,7 @@ module PrinterTest =
                      , [Age] int NOT NULL
                    );
                    ALTER TABLE [Users] ADD CONSTRAINT [DF_Users_Age] DEFAULT (42) FOR [Age];""" }
+      // COLLATE
       { Input = """
                 table Users = {
                   Name: { nvarchar(128) with collate = Japanese_XJIS_100_CI_AS_SC }
