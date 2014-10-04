@@ -70,6 +70,17 @@ module PrinterTest =
                        [Id] int NOT NULL
                      , [UserId] int NOT NULL
                    );""" }
+      // NULL
+      { Input = """
+                table Users = {
+                  Id: int
+                  Name: nullable(nvarchar(16))
+                }"""
+        Expected = """
+                   CREATE TABLE [Users] (
+                       [Id] int NOT NULL
+                     , [Name] nvarchar(16) NULL
+                   );""" }
       // 単純なPK
       { Input = """
                 table Users = {

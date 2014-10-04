@@ -51,14 +51,17 @@ module Printer =
 
   let columnTypeName colTyp =
     match colTyp with
+    | BuiltinType { TypeName = "nullable"; TypeParameters = typeParams } ->
+        let innerTypeName = typeParams |> List.map (fun (BoundValue v) -> v) |> Str.concat
+        (innerTypeName, " NULL")
     | BuiltinType typ
     | AliasDef (typ, _) ->
         let typeParams =
           match typ.TypeParameters with
           | [] -> ""
           | notEmpty -> "(" + (notEmpty |> List.map (fun (BoundValue v) -> v) |> Str.join ", ") + ")"
-        typ.TypeName + typeParams
-    | EnumTypeDef typ -> typ.EnumTypeName
+        (typ.TypeName + typeParams, " NOT NULL")
+    | EnumTypeDef typ -> (typ.EnumTypeName, " NOT NULL")
 
   let printCollate attrs =
     let collate = attrs |> List.tryPick (function ComplexAttr ("collate", v) -> Some v | _ -> None)
@@ -68,15 +71,15 @@ module Printer =
 
   let printColumnTypeName attrs (typ: ColumnTypeDef) =
     let attrs = attrs @ typ.ColumnAttributes
-    let typeName = columnTypeName typ.ColumnTypeDef
-    typeName + (printCollate attrs) + " NOT NULL"
+    let typeName, nullable = columnTypeName typ.ColumnTypeDef
+    typeName + (printCollate attrs) + nullable
 
   let printColumnDef col =
     let typ, attrs = col.ColumnType
     let name =
       match col.ColumnName with
       | ColumnName (name, _) -> name
-      | Wildcard -> columnTypeName typ.ColumnTypeDef
+      | Wildcard -> columnTypeName typ.ColumnTypeDef |> fst
     "[" + name + "] " + (printColumnTypeName attrs typ)
 
   let printCreateTable table =
