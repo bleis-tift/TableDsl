@@ -58,17 +58,24 @@ module Printer =
         typ.TypeName + typeParams
     | EnumTypeDef typ -> typ.EnumTypeName
 
-  let printColumnTypeName (typ: ColumnTypeDef) =
+  let printCollate attrs =
+    let collate = attrs |> List.tryPick (function ComplexAttr ("collate", v) -> Some v | _ -> None)
+    match collate with
+    | Some collate -> " COLLATE " + (printAttributeValue collate)
+    | None -> ""
+
+  let printColumnTypeName attrs (typ: ColumnTypeDef) =
+    let attrs = attrs @ typ.ColumnAttributes
     let typeName = columnTypeName typ.ColumnTypeDef
-    typeName + " NOT NULL"
+    typeName + (printCollate attrs) + " NOT NULL"
 
   let printColumnDef col =
-    let typ, _ = col.ColumnType
+    let typ, attrs = col.ColumnType
     let name =
       match col.ColumnName with
       | ColumnName (name, _) -> name
       | Wildcard -> columnTypeName typ.ColumnTypeDef
-    "[" + name + "] " + (printColumnTypeName typ)
+    "[" + name + "] " + (printColumnTypeName attrs typ)
 
   let printCreateTable table =
     "CREATE TABLE [" + table.TableName + "] (\n"
@@ -133,6 +140,7 @@ module Printer =
   | col, ComplexAttr ("default", value) ->
       let value = printAttributeValue value
       acc |> AList.add (Default ("DF_" + tableName + "_" + col)) [DefaultCol (col, value)]
+  | _col, ComplexAttr ("collate", _value) -> acc // do nothing
   | _col, SimpleAttr _ -> failwith "not implemented"
   | _col, ComplexAttr _ -> failwith "not implemented"
 

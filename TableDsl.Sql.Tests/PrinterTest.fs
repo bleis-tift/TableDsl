@@ -244,6 +244,14 @@ module PrinterTest =
                      , [Age] int NOT NULL
                    );
                    ALTER TABLE [Users] ADD CONSTRAINT [DF_Users_Age] DEFAULT (42) FOR [Age];""" }
+      { Input = """
+                table Users = {
+                  Name: { nvarchar(128) with collate = Japanese_XJIS_100_CI_AS_SC }
+                }"""
+        Expected = """
+                   CREATE TABLE [Users] (
+                       [Name] nvarchar(128) COLLATE Japanese_XJIS_100_CI_AS_SC NOT NULL
+                   );""" }
     ]
     |> List.map (fun { Input = a; Expected = b} -> { Input = adjust a; Expected = adjust b })
 
