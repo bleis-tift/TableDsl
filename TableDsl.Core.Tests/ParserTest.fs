@@ -144,13 +144,13 @@ module ParserTest =
       """
       |> parse
       |> should equal
-           [ let fkType sndParam =
+           [ let fkType sndParam sndAttr =
                { ColumnTypeDef = AliasDef ({ TypeName = "FK"; TypeParameters = [TypeVariable "@table"; sndParam] }, builtin0 "uniqueidentifier")
-                 ColumnAttributes = [ ComplexAttr ("FK", [ Var "@table"; Lit "."; Var "@col" ]) ]
+                 ColumnAttributes = [ ComplexAttr ("FK", [ Var "@table"; Lit "."; sndAttr ]) ]
                  ColumnSummary = None
                  ColumnJpName = None }
-             yield fkType (TypeVariable "@col")
-             yield { ColumnTypeDef = AliasDef ({ TypeName = "FKID"; TypeParameters = [TypeVariable "@table"] }, fkType (BoundValue "Id"))
+             yield fkType (TypeVariable "@col") (Var "@col")
+             yield { ColumnTypeDef = AliasDef ({ TypeName = "FKID"; TypeParameters = [TypeVariable "@table"] }, fkType (BoundValue "Id") (Lit "Id"))
                      ColumnAttributes = []
                      ColumnSummary = None
                      ColumnJpName = None }

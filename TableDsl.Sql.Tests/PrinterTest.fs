@@ -363,6 +363,39 @@ module PrinterTest =
                    CREATE TABLE [Users] (
                        [Name] nvarchar(128) COLLATE Japanese_XJIS_100_CI_AS_SC NOT NULL
                    );""" }
+      // coltype(FK)
+      { Input = """
+                coltype FK(@table, @col) = { uniqueidentifier with FK = @table.@col }
+                coltype FKID(@table) = FK(@table, Id)
+                table Users = {
+                  Id: { uniqueidentifier with PK }
+                  Name: nvarchar(128)
+                }
+                table DeletedUsers = {
+                  Id: { uniqueidentifier with PK }
+                  UserId: FKID(Users)
+                }"""
+        Expected = """
+                   CREATE TABLE [Users] (
+                       [Id] uniqueidentifier NOT NULL
+                     , [Name] nvarchar(128) NOT NULL
+                   );
+                   CREATE TABLE [DeletedUsers] (
+                       [Id] uniqueidentifier NOT NULL
+                     , [UserId] uniqueidentifier NOT NULL
+                   );
+                   ALTER TABLE [Users] ADD CONSTRAINT [PK_Users] PRIMARY KEY CLUSTERED (
+                       [Id]
+                   );
+                   ALTER TABLE [DeletedUsers] ADD CONSTRAINT [PK_DeletedUsers] PRIMARY KEY CLUSTERED (
+                       [Id]
+                   );
+                   ALTER TABLE [DeletedUsers] ADD CONSTRAINT [FK_DeletedUsers_Users] FOREIGN KEY (
+                       [UserId]
+                   ) REFERENCES [Users] (
+                       [Id]
+                   ) ON UPDATE NO ACTION
+                     ON DELETE NO ACTION;""" }
     ]
     |> List.map (fun { Input = a; Expected = b} -> { Input = adjust a; Expected = adjust b })
 

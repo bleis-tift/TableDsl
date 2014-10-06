@@ -42,6 +42,17 @@ module internal Impl =
     else
       sepBy pOpenTypeParamElem (pSkipToken ",") |> between (pchar '(') (pchar ')')
 
+  let expandAttr' replacingMap = function
+  | Var v ->
+      match Map.tryFind v replacingMap with
+      | Some (BoundValue v) -> Lit v
+      | _ -> Var v
+  | Lit l -> Lit l
+
+  let expandAttr replacingMap = function
+  | ComplexAttr (key, values) -> ComplexAttr (key, values |> List.map (expandAttr' replacingMap))
+  | other -> other
+
   let replaceTypeParams'' replacingMap = List.map (function TypeVariable key -> replacingMap |> Map.find key | other -> other)
 
   let rec replaceTypeParams' replacingMap = function
@@ -52,24 +63,26 @@ module internal Impl =
   | EnumTypeDef ty -> EnumTypeDef ty
 
   and replaceTypeParams replacingMap colTypeDef =
-    { colTypeDef with ColumnTypeDef = replaceTypeParams' replacingMap colTypeDef.ColumnTypeDef }
+    { colTypeDef with ColumnTypeDef = replaceTypeParams' replacingMap colTypeDef.ColumnTypeDef
+                      ColumnAttributes = colTypeDef.ColumnAttributes |> List.map (expandAttr replacingMap) }
 
   let resolveType typeName typeParams env =
     let resolved =
       env |> List.tryFind (fun (name, paramCount, _, _) -> name = typeName && paramCount = (List.length typeParams)) 
     match resolved with
     | Some (name, paramCount, t, attrs) ->
-        let typeDef =
+        let typeDef, attrs =
           match t with
-          | BuiltinType ty -> BuiltinType { ty with TypeParameters = typeParams }
+          | BuiltinType ty -> (BuiltinType { ty with TypeParameters = typeParams }), attrs
           | AliasDef (ty, originalType) ->
               let replacingMap =
                 Map.ofList (
                   (ty.TypeParameters, typeParams)
                   ||> List.zip
                   |> List.choose (function (TypeVariable key, value) -> Some (key, value) | _ -> None))
-              AliasDef ({ ty with TypeParameters = typeParams }, replaceTypeParams replacingMap originalType)
-          | EnumTypeDef ty -> EnumTypeDef ty
+              let attrs = attrs |> List.map (expandAttr replacingMap)
+              (AliasDef ({ ty with TypeParameters = typeParams }, replaceTypeParams replacingMap originalType)), attrs
+          | EnumTypeDef ty -> (EnumTypeDef ty), attrs
         preturn { ColumnSummary = None; ColumnTypeDef = typeDef; ColumnJpName = None; ColumnAttributes = attrs }
     | None -> failFatally (sprintf "%sという型が見つかりませんでした。" typeName)
 

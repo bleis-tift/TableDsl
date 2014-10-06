@@ -74,7 +74,7 @@ module Printer =
   let printAttributeValue attrValueElems =
     let printAttrValueElem = function
     | Lit l -> l
-    | Var v -> v
+    | Var v -> "oops!"
 
     attrValueElems |> List.map printAttrValueElem |> Str.concat
 
