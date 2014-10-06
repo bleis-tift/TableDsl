@@ -337,6 +337,21 @@ module PrinterTest =
                        [Id] uniqueidentifier NOT NULL
                      , [Platform] int NOT NULL
                    );""" }
+      // coltype(nullable)
+      { Input = """
+                coltype nvarchar(@n) = { nvarchar(@n) with collate = Japanese_XJIS_100_CI_AS_SC }
+                table Users = {
+                  LoginName: { nvarchar(16) with unique }
+                  Name: nullable(nvarchar(128))
+                }"""
+        Expected = """
+                   CREATE TABLE [Users] (
+                       [LoginName] nvarchar(16) COLLATE Japanese_XJIS_100_CI_AS_SC NOT NULL
+                     , [Name] nvarchar(128) COLLATE Japanese_XJIS_100_CI_AS_SC NULL
+                   );
+                   ALTER TABLE [Users] ADD CONSTRAINT [UQ_Users] UNIQUE NONCLUSTERED (
+                       [LoginName]
+                   );""" }
     ]
     |> List.map (fun { Input = a; Expected = b} -> { Input = adjust a; Expected = adjust b })
 

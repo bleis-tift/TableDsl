@@ -17,7 +17,7 @@ module ParserTest =
     { TypeName = name; TypeParameters = [] }
 
   let boundNullable typ =
-    { ColumnTypeDef = BuiltinType { TypeName = "nullable"; TypeParameters = [BoundValue typ] }
+    { ColumnTypeDef = BuiltinType { TypeName = "nullable"; TypeParameters = [BoundType typ] }
       ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
 
   [<Test>]
@@ -106,9 +106,13 @@ module ParserTest =
 
     [<Test>]
     let ``one alias def with nested type`` () =
+      let nvarchar256 = { ColumnTypeDef = BuiltinType { TypeName = "nvarchar"; TypeParameters = [BoundValue "256"] }
+                          ColumnAttributes = []
+                          ColumnSummary = None
+                          ColumnJpName = None }
       "coltype T = nullable(nvarchar(256))"
       |> parse
-      |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "T"; TypeParameters = [] }, boundNullable "nvarchar(256)")
+      |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "T"; TypeParameters = [] }, boundNullable nvarchar256)
                           ColumnAttributes = []
                           ColumnSummary = None
                           ColumnJpName = None } ]
@@ -191,6 +195,9 @@ module ParserTest =
          | Failure (UserFriendlyMessages errs) -> errs |> List.map (fun (_, _, msg) -> msg) |> should equal ["列挙型の定義(Platform2)の基底型に他の列挙型(Platform)を指定することはできません。"]
 
   module TableDef =
+    let nullable typ =
+      { ColumnTypeDef = BuiltinType { TypeName = "nullable"; TypeParameters = [BoundType typ] }
+        ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None }
     let builtin1 name _1 =
       { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [BoundValue _1] }
         ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
@@ -345,7 +352,7 @@ module ParserTest =
                      ColumnType = (builtin0 "datetime2", []) } ] } ]
 
     [<Test>]
-    let ``nullable`` () =
+    let ``nullable type`` () =
       """
       table Users = {
         Id: int
@@ -364,10 +371,10 @@ module ParserTest =
                      ColumnType = (builtin0 "int", []) }
                    { ColumnSummary = None
                      ColumnName = ColumnName ("Name", None)
-                     ColumnType = (builtin1 "nullable" "nvarchar(16)", []) }
+                     ColumnType = (nullable (builtin1 "nvarchar" "16"), []) }
                    { ColumnSummary = None
                      ColumnName = ColumnName ("Age", None)
-                     ColumnType = (builtin1 "nullable" "int", []) } ]
+                     ColumnType = (nullable (builtin0 "int"), []) } ]
              }
            ]
 

@@ -24,6 +24,7 @@ with
 type OpenTypeParam =
   | TypeVariable of string
   | BoundValue of string
+  | BoundType of ColumnTypeDef
 with
   override this.ToString() = sprintf "%A" this
  
@@ -31,7 +32,7 @@ with
 // 組み込みの型は非列挙型のみとなっている。
 
 /// 非列挙型は名前と型パラメータを持つ。
-type NonEnumType = {
+and NonEnumType = {
   TypeName: string
   TypeParameters: OpenTypeParam list
 }

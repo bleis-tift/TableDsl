@@ -78,9 +78,9 @@ module Printer =
 
     attrValueElems |> List.map printAttrValueElem |> Str.concat
 
-  let printNonEnumType = function
+  let rec printNonEnumType = function
   | { TypeName = "nullable"; TypeParameters = typeParams } ->
-      let innerTypeName = typeParams |> List.map (fun (BoundValue v) -> v) |> Str.concat
+      let innerTypeName = typeParams |> List.map (function BoundValue v -> v | BoundType t -> printColumnTypeName [] t |> fst) |> Str.concat
       (innerTypeName, " NULL")
   | typ ->
       let typeParams =
@@ -89,22 +89,22 @@ module Printer =
         | notEmpty -> "(" + (notEmpty |> List.map (function (BoundValue v) -> v | _ -> "oops!") |> Str.join ", ") + ")"
       (typ.TypeName + typeParams, " NOT NULL")
 
-  let rec columnTypeName colTyp =
+  and columnTypeName colTyp =
     match colTyp with
     | BuiltinType typ -> printNonEnumType typ
     | AliasDef (_typ, orgType) -> columnTypeName orgType.ColumnTypeDef
     | EnumTypeDef typ -> printNonEnumType typ.BaseType
 
-  let printCollate attrs =
+  and printCollate attrs =
     let collate = attrs |> List.tryPick (function ComplexAttr ("collate", v) -> Some v | _ -> None)
     match collate with
     | Some collate -> " COLLATE " + (printAttributeValue collate)
     | None -> ""
 
-  let printColumnTypeName attrs (typ: ColumnTypeDef) =
+  and printColumnTypeName attrs (typ: ColumnTypeDef) =
     let attrs = attrs @ typ.ColumnAttributes
     let typeName, nullable = columnTypeName typ.ColumnTypeDef
-    typeName + (printCollate attrs) + nullable
+    (typeName + (printCollate attrs), nullable)
 
   let printColumnDef col =
     let typ, attrs = col.ColumnType
@@ -116,7 +116,8 @@ module Printer =
           | BuiltinType { TypeName = name }
           | AliasDef ({ TypeName = name }, _)
           | EnumTypeDef { EnumTypeName = name } -> name
-    "[" + name + "] " + (printColumnTypeName attrs typ)
+    let typeName, nullable = printColumnTypeName attrs typ
+    "[" + name + "] " + typeName + nullable
 
   let printCreateTable table =
     "CREATE TABLE [" + table.TableName + "] (\n"

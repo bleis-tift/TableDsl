@@ -24,11 +24,23 @@ module internal Impl =
       many (attempt p) |>> (fun xs -> System.String.Concat(xs))
     pNonQuotedTypeParamElem [','; ')']
 
+  let pOpenTypeRefWithoutAttributes, pOpenTypeRefWithoutAttributesRef = createParserForwardedToRef ()
+
+  let pNullableParam = parse {
+    do! pSkipOnelineToken "("
+    let! typ = pOpenTypeRefWithoutAttributes
+    do! pSkipOnelineToken ")"
+    return [BoundType typ]
+  }
+
   let pOpenTypeParamElem =
     pTypeVariableName |>> TypeVariable <|> (pSqlValue |>> BoundValue) // ここはpSqlValueじゃなくて、pSqlTypeか？
 
-  let pOpenTypeParam =
-    sepBy pOpenTypeParamElem (pSkipToken ",") |> between (pchar '(') (pchar ')')
+  let pOpenTypeParam typeName =
+    if typeName = "nullable" then
+      pNullableParam
+    else
+      sepBy pOpenTypeParamElem (pSkipToken ",") |> between (pchar '(') (pchar ')')
 
   let replaceTypeParams'' replacingMap = List.map (function TypeVariable key -> replacingMap |> Map.find key | other -> other)
 
@@ -63,7 +75,7 @@ module internal Impl =
 
   let pClosedTypeRefWithoutAttributes = parse {
     let! typeName = pName
-    let! typeParams = opt (attempt pOpenTypeParam)
+    let! typeParams = opt (attempt (pOpenTypeParam typeName))
     let typeParams =
       match typeParams with
       | None -> []
@@ -73,7 +85,7 @@ module internal Impl =
     return typ
   }
 
-  let pOpenTypeRefWithoutAttributes = pClosedTypeRefWithoutAttributes
+  pOpenTypeRefWithoutAttributesRef := pClosedTypeRefWithoutAttributes
 
   let pClosedComplexAttribute = parse {
     do! wsnl |>> ignore

@@ -5,12 +5,12 @@ open TableDsl
 open TableDsl.Printer.Primitives
 
 module TableDef =
-  let printNonEnumTypeName (nonEnumType: NonEnumType) =
+  let rec printNonEnumTypeName (nonEnumType: NonEnumType) =
     match nonEnumType.TypeParameters with
     | [] -> nonEnumType.TypeName
-    | other -> nonEnumType.TypeName + (printOpenTypeParams nonEnumType.TypeParameters)
+    | other -> nonEnumType.TypeName + (printOpenTypeParams (printColumnTypeDef []) nonEnumType.TypeParameters)
 
-  let printColumnTypeDef col attrs =
+  and printColumnTypeDef attrs col =
     " " +
       match col.ColumnTypeDef with
       | BuiltinType typ -> printAttributes (printNonEnumTypeName typ) attrs
@@ -26,7 +26,7 @@ module TableDef =
 
   let printTypeDef attrs = function
   | BuiltinType _ -> failwith "組み込み型をcoltypeとして出力することはできません。"
-  | AliasDef (typ, originalType) -> (printNonEnumTypeName typ, printColumnTypeDef originalType attrs)
+  | AliasDef (typ, originalType) -> (printNonEnumTypeName typ, printColumnTypeDef attrs originalType)
   | EnumTypeDef typ -> (typ.EnumTypeName, printEnumTypeBody typ attrs)
 
   let printColumnName = function
@@ -34,7 +34,7 @@ module TableDef =
   | ColumnName (name, jpName) -> name + (printJpName jpName)
 
   let printColumnType (typ, attrs) =
-    printColumnTypeDef typ attrs
+    printColumnTypeDef attrs typ
 
   let printColumnDef colDef =
     let summary = printSummary 2 colDef.ColumnSummary
