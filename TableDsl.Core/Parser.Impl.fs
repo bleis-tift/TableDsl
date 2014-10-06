@@ -58,8 +58,7 @@ module internal Impl =
                   |> List.choose (function (TypeVariable key, value) -> Some (key, value) | _ -> None))
               AliasDef ({ ty with TypeParameters = typeParams }, replaceTypeParams replacingMap originalType)
           | EnumTypeDef ty -> EnumTypeDef ty
-        let typ = { ColumnSummary = None; ColumnTypeDef = typeDef; ColumnJpName = None; ColumnAttributes = [] }
-        preturn (typ, attrs)
+        preturn { ColumnSummary = None; ColumnTypeDef = typeDef; ColumnJpName = None; ColumnAttributes = attrs }
     | None -> failFatally (sprintf "%sという型が見つかりませんでした。" typeName)
 
   let pClosedTypeRefWithoutAttributes = parse {
@@ -70,28 +69,11 @@ module internal Impl =
       | None -> []
       | Some x -> x
     let! env = getUserState
-    let! typ, attrs = resolveType typeName typeParams env
-    return ({ typ with ColumnAttributes = attrs }, [])
+    let! typ = resolveType typeName typeParams env
+    return typ
   }
 
-  let pOpenTypeRefWithoutAttributes = parse {
-    let! typeName = pName
-    let! typeParams = opt (attempt pOpenTypeParam)
-    let typeParams =
-      match typeParams with
-      | None -> []
-      | Some x -> x
-    let! env = getUserState
-    let! typ, attrs = resolveType typeName typeParams env
-    let typDef =
-      match typ.ColumnTypeDef with
-      | BuiltinType bt ->
-          BuiltinType { bt with TypeParameters = typeParams }
-      | AliasDef (ad, org) ->
-          AliasDef ({ ad with TypeParameters = typeParams }, org)
-      | other -> other
-    return ({ typ with ColumnTypeDef = typDef; ColumnAttributes = attrs }, [])
-  }
+  let pOpenTypeRefWithoutAttributes = pClosedTypeRefWithoutAttributes
 
   let pClosedComplexAttribute = parse {
     do! wsnl |>> ignore
@@ -118,7 +100,7 @@ module internal Impl =
 
   let pClosedTypeRefWithAttributes = parse {
     do! pSkipOnelineToken "{"
-    let! typ, _ = pClosedTypeRefWithoutAttributes
+    let! typ = pClosedTypeRefWithoutAttributes
     do! pSkipToken "with"
     let! attrs = pClosedAttributes
     do! pSkipOnelineToken "}"
@@ -127,15 +109,15 @@ module internal Impl =
 
   let pOpenTypeRefWithAttributes = parse {
     do! pSkipOnelineToken "{"
-    let! typ, _ = pOpenTypeRefWithoutAttributes
+    let! typ = pOpenTypeRefWithoutAttributes
     do! pSkipToken "with"
     let! attrs = pOpenAttributes
     do! pSkipOnelineToken "}"
     return (typ, attrs)
   }
 
-  let pClosedTypeRef = pClosedTypeRefWithAttributes <|> pClosedTypeRefWithoutAttributes
-  let pOpenTypeRef = pOpenTypeRefWithAttributes <|> pOpenTypeRefWithoutAttributes
+  let pClosedTypeRef = pClosedTypeRefWithAttributes <|> (pClosedTypeRefWithoutAttributes |>> fun t -> (t, []))
+  let pOpenTypeRef = pOpenTypeRefWithAttributes <|> (pOpenTypeRefWithoutAttributes |>> fun t -> (t, []))
 
   let pAliasDef name typeParams = parse {
     let! body, attrs = pOpenTypeRef
