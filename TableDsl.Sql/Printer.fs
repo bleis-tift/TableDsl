@@ -136,10 +136,13 @@ module Printer =
 
   let attrs colDef =
     let typ, attrs = colDef.ColumnType
-    let colName, attrs =
+    let colName =
       match colDef.ColumnName with
-      | Wildcard -> let name, attrs, _ = columnTypeName attrs typ.ColumnTypeDef in name, attrs
-      | ColumnName (name, _) -> name, attrs
+      | Wildcard ->
+          match typ.ColumnTypeDef with
+          | BuiltinType ty | AliasDef (ty, _) -> ty.TypeName
+          | EnumTypeDef ty -> ty.EnumTypeName
+      | ColumnName (name, _) -> name
     seq { yield! attrs' colName typ; for attr in attrs -> (colName, attr) }
 
   let indexInfo defaultInfo (value: string) =
