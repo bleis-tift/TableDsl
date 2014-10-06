@@ -30,6 +30,18 @@ module internal Impl =
   let pOpenTypeParam =
     sepBy pOpenTypeParamElem (pSkipToken ",") |> between (pchar '(') (pchar ')')
 
+  let replaceTypeParams'' replacingMap = List.map (function TypeVariable key -> replacingMap |> Map.find key | other -> other)
+
+  let rec replaceTypeParams' replacingMap = function
+  | BuiltinType ty -> BuiltinType { ty with TypeParameters = ty.TypeParameters |> replaceTypeParams'' replacingMap }
+  | AliasDef (ty, originalType) ->
+      let replaced = ty.TypeParameters |> replaceTypeParams'' replacingMap
+      AliasDef ({ ty with TypeParameters = replaced }, replaceTypeParams replacingMap originalType)
+  | EnumTypeDef ty -> EnumTypeDef ty
+
+  and replaceTypeParams replacingMap colTypeDef =
+    { colTypeDef with ColumnTypeDef = replaceTypeParams' replacingMap colTypeDef.ColumnTypeDef }
+
   let resolveType typeName typeParams env =
     let resolved =
       env |> List.tryFind (fun (name, paramCount, _, _) -> name = typeName && paramCount = (List.length typeParams)) 
@@ -38,7 +50,13 @@ module internal Impl =
         let typeDef =
           match t with
           | BuiltinType ty -> BuiltinType { ty with TypeParameters = typeParams }
-          | AliasDef (ty, originalType) -> AliasDef ({ ty with TypeParameters = typeParams }, originalType)
+          | AliasDef (ty, originalType) ->
+              let replacingMap =
+                Map.ofList (
+                  (ty.TypeParameters, typeParams)
+                  ||> List.zip
+                  |> List.choose (function (TypeVariable key, value) -> Some (key, value) | _ -> None))
+              AliasDef ({ ty with TypeParameters = typeParams }, replaceTypeParams replacingMap originalType)
           | EnumTypeDef ty -> EnumTypeDef ty
         let typ = { ColumnSummary = None; ColumnTypeDef = typeDef; ColumnJpName = None; ColumnAttributes = [] }
         preturn (typ, attrs)
@@ -53,7 +71,7 @@ module internal Impl =
       | Some x -> x
     let! env = getUserState
     let! typ, attrs = resolveType typeName typeParams env
-    return (typ, attrs)
+    return ({ typ with ColumnAttributes = attrs }, [])
   }
 
   let pOpenTypeRefWithoutAttributes = parse {

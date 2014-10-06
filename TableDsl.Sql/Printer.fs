@@ -87,7 +87,7 @@ module Printer =
         let typeParams =
           match typ.TypeParameters with
           | [] -> ""
-          | notEmpty -> "(" + (notEmpty |> List.map (fun (BoundValue v) -> v) |> Str.join ", ") + ")"
+          | notEmpty -> "(" + (notEmpty |> List.map (function (BoundValue v) -> v | _ -> "oops!") |> Str.join ", ") + ")"
         (typ.TypeName + typeParams, " NOT NULL")
     | AliasDef (_typ, orgType) ->
         columnTypeName orgType.ColumnTypeDef
