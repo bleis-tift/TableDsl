@@ -78,20 +78,22 @@ module Printer =
 
     attrValueElems |> List.map printAttrValueElem |> Str.concat
 
+  let printNonEnumType = function
+  | { TypeName = "nullable"; TypeParameters = typeParams } ->
+      let innerTypeName = typeParams |> List.map (fun (BoundValue v) -> v) |> Str.concat
+      (innerTypeName, " NULL")
+  | typ ->
+      let typeParams =
+        match typ.TypeParameters with
+        | [] -> ""
+        | notEmpty -> "(" + (notEmpty |> List.map (function (BoundValue v) -> v | _ -> "oops!") |> Str.join ", ") + ")"
+      (typ.TypeName + typeParams, " NOT NULL")
+
   let rec columnTypeName colTyp =
     match colTyp with
-    | BuiltinType { TypeName = "nullable"; TypeParameters = typeParams } ->
-        let innerTypeName = typeParams |> List.map (fun (BoundValue v) -> v) |> Str.concat
-        (innerTypeName, " NULL")
-    | BuiltinType typ ->
-        let typeParams =
-          match typ.TypeParameters with
-          | [] -> ""
-          | notEmpty -> "(" + (notEmpty |> List.map (function (BoundValue v) -> v | _ -> "oops!") |> Str.join ", ") + ")"
-        (typ.TypeName + typeParams, " NOT NULL")
-    | AliasDef (_typ, orgType) ->
-        columnTypeName orgType.ColumnTypeDef
-    | EnumTypeDef typ -> (typ.EnumTypeName, " NOT NULL")
+    | BuiltinType typ -> printNonEnumType typ
+    | AliasDef (_typ, orgType) -> columnTypeName orgType.ColumnTypeDef
+    | EnumTypeDef typ -> printNonEnumType typ.BaseType
 
   let printCollate attrs =
     let collate = attrs |> List.tryPick (function ComplexAttr ("collate", v) -> Some v | _ -> None)

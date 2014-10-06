@@ -322,6 +322,21 @@ module PrinterTest =
                    ALTER TABLE [Users] ADD CONSTRAINT [UQ_Users] UNIQUE NONCLUSTERED (
                        [LoginName]
                    );""" }
+      // coltype(enum)
+      { Input = """
+                coltype Platform =
+                  | iOS = 1
+                  | Android = 2
+                based int
+                table Devices = {
+                  Id: uniqueidentifier
+                  _: Platform
+                }"""
+        Expected = """
+                   CREATE TABLE [Devices] (
+                       [Id] uniqueidentifier NOT NULL
+                     , [Platform] int NOT NULL
+                   );""" }
     ]
     |> List.map (fun { Input = a; Expected = b} -> { Input = adjust a; Expected = adjust b })
 
