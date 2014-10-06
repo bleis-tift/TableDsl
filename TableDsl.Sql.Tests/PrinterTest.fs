@@ -352,6 +352,17 @@ module PrinterTest =
                    ALTER TABLE [Users] ADD CONSTRAINT [UQ_Users] UNIQUE NONCLUSTERED (
                        [LoginName]
                    );""" }
+      // coltype(recursive)
+      { Input = """
+                coltype nvarchar(@n) = { nvarchar(@n) with collate = Japanese_XJIS_100_CI_AS_SC }
+                coltype Name = nvarchar(128)
+                table Users = {
+                  _: Name
+                }"""
+        Expected = """
+                   CREATE TABLE [Users] (
+                       [Name] nvarchar(128) COLLATE Japanese_XJIS_100_CI_AS_SC NOT NULL
+                   );""" }
     ]
     |> List.map (fun { Input = a; Expected = b} -> { Input = adjust a; Expected = adjust b })
 

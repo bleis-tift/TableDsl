@@ -78,22 +78,22 @@ module Printer =
 
     attrValueElems |> List.map printAttrValueElem |> Str.concat
 
-  let rec printNonEnumType = function
+  let rec printNonEnumType attrs = function
   | { TypeName = "nullable"; TypeParameters = typeParams } ->
       let innerTypeName = typeParams |> List.map (function BoundValue v -> v | BoundType t -> printColumnTypeName [] t |> fst) |> Str.concat
-      (innerTypeName, " NULL")
+      (innerTypeName, attrs, " NULL")
   | typ ->
       let typeParams =
         match typ.TypeParameters with
         | [] -> ""
         | notEmpty -> "(" + (notEmpty |> List.map (function (BoundValue v) -> v | _ -> "oops!") |> Str.join ", ") + ")"
-      (typ.TypeName + typeParams, " NOT NULL")
+      (typ.TypeName + typeParams, attrs, " NOT NULL")
 
-  and columnTypeName colTyp =
+  and columnTypeName attrs colTyp =
     match colTyp with
-    | BuiltinType typ -> printNonEnumType typ
-    | AliasDef (_typ, orgType) -> columnTypeName orgType.ColumnTypeDef
-    | EnumTypeDef typ -> printNonEnumType typ.BaseType
+    | BuiltinType typ -> printNonEnumType attrs typ
+    | AliasDef (_typ, orgType) -> columnTypeName (attrs @ orgType.ColumnAttributes) orgType.ColumnTypeDef
+    | EnumTypeDef typ -> printNonEnumType attrs typ.BaseType
 
   and printCollate attrs =
     let collate = attrs |> List.tryPick (function ComplexAttr ("collate", v) -> Some v | _ -> None)
@@ -103,7 +103,7 @@ module Printer =
 
   and printColumnTypeName attrs (typ: ColumnTypeDef) =
     let attrs = attrs @ typ.ColumnAttributes
-    let typeName, nullable = columnTypeName typ.ColumnTypeDef
+    let typeName, attrs, nullable = columnTypeName attrs typ.ColumnTypeDef
     (typeName + (printCollate attrs), nullable)
 
   let printColumnDef col =
@@ -136,10 +136,10 @@ module Printer =
 
   let attrs colDef =
     let typ, attrs = colDef.ColumnType
-    let colName =
+    let colName, attrs =
       match colDef.ColumnName with
-      | Wildcard -> columnTypeName typ.ColumnTypeDef |> fst
-      | ColumnName (name, _) -> name
+      | Wildcard -> let name, attrs, _ = columnTypeName attrs typ.ColumnTypeDef in name, attrs
+      | ColumnName (name, _) -> name, attrs
     seq { yield! attrs' colName typ; for attr in attrs -> (colName, attr) }
 
   let indexInfo defaultInfo (value: string) =
