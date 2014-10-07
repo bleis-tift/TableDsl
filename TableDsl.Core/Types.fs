@@ -95,5 +95,6 @@ type Element =
   | TableDef of TableDef
   | ColTypeDef of ColumnTypeDef
   //| Comment of string
+  //| BlankLine
 with
   override this.ToString() = sprintf "%A" this
