@@ -10,19 +10,19 @@ module TableDef =
     | [] -> nonEnumType.TypeName
     | other -> nonEnumType.TypeName + (printOpenTypeParams (printColumnTypeDef []) nonEnumType.TypeParameters)
 
+  and printEnumCases cases =
+    cases |> List.map (fun (name, value) -> "  | " + name + " = " + string value) |> Str.join "\n"
+
+  and printEnumTypeBody enumType attrs =
+    let baseType = printNonEnumTypeName enumType.BaseType
+    "\n" + (printEnumCases enumType.Cases) + "\nbased " + (printAttributes baseType attrs)
+
   and printColumnTypeDef attrs col =
     " " +
       match col.ColumnTypeDef with
       | BuiltinType typ -> printAttributes (printNonEnumTypeName typ) attrs
       | AliasDef (typ, originalType) -> printAttributes (printNonEnumTypeName typ) attrs
-      | EnumTypeDef typ -> failwith "Not implemented yet"
-
-  let printEnumCases cases =
-    cases |> List.map (fun (name, value) -> "  | " + name + " = " + string value) |> Str.join "\n"
-
-  let printEnumTypeBody enumType attrs =
-    let baseType = printNonEnumTypeName enumType.BaseType
-    "\n" + (printEnumCases enumType.Cases) + "\nbased " + (printAttributes baseType attrs)
+      | EnumTypeDef typ -> printAttributes typ.EnumTypeName attrs
 
   let printTypeDef attrs = function
   | BuiltinType _ -> failwith "組み込み型をcoltypeとして出力することはできません。"
