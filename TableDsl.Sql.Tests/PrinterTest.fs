@@ -316,6 +316,15 @@ module PrinterTest =
                    CREATE TABLE [Users] (
                        [Id] int IDENTITY(1, 1) NOT NULL
                    );""" }
+      // 平均長と最大長(CREATE TABLEとしては無視される)
+      { Input = """
+                table Users = {
+                  Name: { nvarchar(128) with average = 16; max = 100 }
+                }"""
+        Expected = """
+                   CREATE TABLE [Users] (
+                       [Name] nvarchar(128) NOT NULL
+                   );""" }
       // coltype
       { Input = """
                 coltype nvarchar(@n) = { nvarchar(@n) with collate = Japanese_XJIS_100_CI_AS_SC }

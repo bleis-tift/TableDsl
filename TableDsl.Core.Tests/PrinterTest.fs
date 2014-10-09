@@ -112,6 +112,11 @@ module PrinterTest =
         Id: int
       }
       """
+      """
+      table Users = {
+        Name: { nvarchar(128) with average = 16; max = 120 }
+      }
+      """
     ]
     |> List.map adjust
 

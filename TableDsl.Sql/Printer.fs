@@ -217,7 +217,9 @@ module Printer =
       acc |> AList.add (Default ("DF_" + tableName + "_" + col)) [DefaultCol (col, value)]
   | _col, SimpleColAttr "identity"
   | _col, ComplexColAttr ("identity", _)
-  | _col, ComplexColAttr ("collate", _) -> acc // do nothing here
+  | _col, ComplexColAttr ("collate", _)
+  | _col, ComplexColAttr ("average", _)
+  | _col, ComplexColAttr ("max", _) -> acc // do nothing here
   | _col, SimpleColAttr _ -> failwith "not implemented"
   | _col, ComplexColAttr _ -> failwith "not implemented"
 
