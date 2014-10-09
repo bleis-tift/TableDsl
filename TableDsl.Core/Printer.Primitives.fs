@@ -36,8 +36,8 @@ module internal Primitives =
     attrValueElems |> List.map printAttrValueElem |> Str.concat
 
   let printAttribute = function
-  | SimpleAttr name -> name
-  | ComplexAttr (name, value) -> name + " = " + (printAttributeValue value)
+  | SimpleColAttr name -> name
+  | ComplexColAttr (name, value) -> name + " = " + (printAttributeValue value)
 
   let printAttributes typ = function
   | [] -> typ

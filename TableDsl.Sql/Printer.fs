@@ -99,15 +99,15 @@ module Printer =
     let identity =
       attrs
       |> List.tryPick (function
-                       | SimpleAttr "identity" -> Some ("1", "1")
-                       | ComplexAttr ("identity", value) -> failwith "not implemented"
+                       | SimpleColAttr "identity" -> Some ("1", "1")
+                       | ComplexColAttr ("identity", value) -> failwith "not implemented"
                        | _ -> None)
     match identity with
     | Some (seed, increment) -> " IDENTITY(" + seed + ", " + increment + ")"
     | None -> ""
 
   and printCollate attrs =
-    let collate = attrs |> List.tryPick (function ComplexAttr ("collate", v) -> Some v | _ -> None)
+    let collate = attrs |> List.tryPick (function ComplexColAttr ("collate", v) -> Some v | _ -> None)
     match collate with
     | Some collate -> " COLLATE " + (printAttributeValue collate)
     | None -> ""
@@ -186,17 +186,17 @@ module Printer =
     | _ -> assert false; defaultInfo
 
   let addAlter tableName acc = function
-  | col, SimpleAttr "PK" -> acc |> AList.add (PrimaryKey (Clustered, "PK_" + tableName)) [PrimaryKeyCol (0, col)]
-  | col, ComplexAttr ("PK", value) ->
+  | col, SimpleColAttr "PK" -> acc |> AList.add (PrimaryKey (Clustered, "PK_" + tableName)) [PrimaryKeyCol (0, col)]
+  | col, ComplexColAttr ("PK", value) ->
       let value = printAttributeValue value
       let indexInfo = indexInfo PrimaryKey.defaultIndexInfo value
       acc |> AList.add2 (PrimaryKey (indexInfo.ClusteredType, indexInfo.KeyNamePrefix + "_" + tableName)) (PrimaryKeyCol (indexInfo.ColumnIndex, col))
-  | col, SimpleAttr "unique" -> acc |> AList.add (UniqueKey (NonClustered, "UQ_" + tableName)) [UniqueKeyCol (0, col)]
-  | col, ComplexAttr ("unique", value) ->
+  | col, SimpleColAttr "unique" -> acc |> AList.add (UniqueKey (NonClustered, "UQ_" + tableName)) [UniqueKeyCol (0, col)]
+  | col, ComplexColAttr ("unique", value) ->
       let value = printAttributeValue value
       let indexInfo = indexInfo UniqueKey.defaultIndexInfo value
       acc |> AList.add2 (UniqueKey (indexInfo.ClusteredType, indexInfo.KeyNamePrefix + "_" + tableName)) (UniqueKeyCol (indexInfo.ColumnIndex, col))
-  | col, ComplexAttr ("FK", value) ->
+  | col, ComplexColAttr ("FK", value) ->
       let value = printAttributeValue value
       match value.Split([|'.'|]) with
       | [| parentTable; parentCol |] ->
@@ -206,20 +206,20 @@ module Printer =
       | [| keyNamePrefix; order; parentTable; parentCol |] ->
           acc |> AList.add2 (ForeignKey ((keyNamePrefix + "_" + tableName + "_" + parentTable), parentTable)) (ForeignKeyCol (int order, col, parentCol))
       | _ -> assert false; failwith "oops!"
-  | col, SimpleAttr "index" ->
+  | col, SimpleColAttr "index" ->
       acc |> AList.add2 (Index (NonClustered, "IX_" + tableName)) (IndexCol (0, col))
-  | col, ComplexAttr ("index", value) ->
+  | col, ComplexColAttr ("index", value) ->
       let value = printAttributeValue value
       let indexInfo = indexInfo Index.defaultIndexInfo value
       acc |> AList.add2 (Index (indexInfo.ClusteredType, indexInfo.KeyNamePrefix + "_" + tableName)) (IndexCol (indexInfo.ColumnIndex, col))
-  | col, ComplexAttr ("default", value) ->
+  | col, ComplexColAttr ("default", value) ->
       let value = printAttributeValue value
       acc |> AList.add (Default ("DF_" + tableName + "_" + col)) [DefaultCol (col, value)]
-  | _col, SimpleAttr "identity"
-  | _col, ComplexAttr ("identity", _)
-  | _col, ComplexAttr ("collate", _) -> acc // do nothing here
-  | _col, SimpleAttr _ -> failwith "not implemented"
-  | _col, ComplexAttr _ -> failwith "not implemented"
+  | _col, SimpleColAttr "identity"
+  | _col, ComplexColAttr ("identity", _)
+  | _col, ComplexColAttr ("collate", _) -> acc // do nothing here
+  | _col, SimpleColAttr _ -> failwith "not implemented"
+  | _col, ComplexColAttr _ -> failwith "not implemented"
 
   let printCols cols =
     "    " + (cols |> List.map (fun col -> "[" + col + "]") |> Str.join "\n  , ")

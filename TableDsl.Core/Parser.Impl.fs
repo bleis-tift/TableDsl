@@ -50,7 +50,7 @@ module internal Impl =
   | Lit l -> Lit l
 
   let expandAttr replacingMap = function
-  | ComplexAttr (key, values) -> ComplexAttr (key, values |> List.map (expandAttr' replacingMap))
+  | ComplexColAttr (key, values) -> ComplexColAttr (key, values |> List.map (expandAttr' replacingMap))
   | other -> other
 
   let replaceTypeParams'' replacingMap = List.map (function TypeVariable key -> replacingMap |> Map.find key | other -> other)
@@ -105,7 +105,7 @@ module internal Impl =
     let! name = pName
     do! pSkipToken "="
     let! value = pSqlValue
-    return ComplexAttr (name, [ Lit value ])
+    return ComplexColAttr (name, [ Lit value ])
   }
   let pVarAttrValueElem = pTypeVariableName |>> Var
   let pLitAttrValueElem = pSqlValue |>> Lit
@@ -115,9 +115,9 @@ module internal Impl =
     let! name = pName
     do! pSkipToken "="
     let! values = many1 pAttributeValueElem
-    return ComplexAttr (name, values)
+    return ComplexColAttr (name, values)
   }
-  let pSimpleAttribute = wsnl >>. pName |>> (fun name -> SimpleAttr name)
+  let pSimpleAttribute = wsnl >>. pName |>> (fun name -> SimpleColAttr name)
   let pClosedAttribute = attempt pClosedComplexAttribute <|> pSimpleAttribute
   let pOpenAttribute = attempt pOpenComplexAttribute <|> pSimpleAttribute
   let pClosedAttributes = sepBy1 pClosedAttribute (pchar ';') // 改行もセパレータ扱いにする？

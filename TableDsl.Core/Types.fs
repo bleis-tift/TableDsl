@@ -4,14 +4,14 @@ type TableAttribute =
   | SimpleTableAttr of string
   | ComplexTableAttr of string * string list
  
-type AttributeValueElem =
+type ColumnAttributeValueElem =
   | Lit of string
   | Var of string
 with
   override this.ToString() = sprintf "%A" this
 
 /// 属性値は属性値の要素のリスト
-type AttributeValue = AttributeValueElem list
+type ColumnAttributeValue = ColumnAttributeValueElem list
  
 /// サマリは単なる文字列型。
 type Summary = string
@@ -19,8 +19,8 @@ type Summary = string
 /// 列の属性には、名前のみを持つSimpleAttrと、名前と値を持つComplexAttrがある。
 /// SimpleAttrは、フラグを意味しており、存在する場合にそのフラグがtrueであることを示す。
 type ColumnAttribute =
-  | SimpleAttr of string
-  | ComplexAttr of string * AttributeValue
+  | SimpleColAttr of string
+  | ComplexColAttr of string * ColumnAttributeValue
 with
   override this.ToString() = sprintf "%A" this
  
