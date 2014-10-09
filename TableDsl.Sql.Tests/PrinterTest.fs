@@ -307,6 +307,15 @@ module PrinterTest =
                    CREATE TABLE [Users] (
                        [Name] nvarchar(128) COLLATE Japanese_XJIS_100_CI_AS_SC NOT NULL
                    );""" }
+      // IDENTIFY
+      { Input = """
+                table Users = {
+                  Id: { int with identity }
+                }"""
+        Expected = """
+                   CREATE TABLE [Users] (
+                       [Id] int IDENTITY(1, 1) NOT NULL
+                   );""" }
       // coltype
       { Input = """
                 coltype nvarchar(@n) = { nvarchar(@n) with collate = Japanese_XJIS_100_CI_AS_SC }

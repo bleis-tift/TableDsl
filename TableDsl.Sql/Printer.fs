@@ -95,6 +95,12 @@ module Printer =
     | AliasDef (_typ, orgType) -> columnTypeName (attrs @ orgType.ColumnAttributes) orgType.ColumnTypeDef
     | EnumTypeDef typ -> printNonEnumType attrs typ.BaseType
 
+  and printIdentity attrs =
+    let identity = attrs |> List.tryPick (function SimpleAttr "identity" -> Some (1, 1) | _ -> None)
+    match identity with
+    | Some (x, y) -> " IDENTITY(" + (string x) + ", " + (string y) + ")"
+    | None -> ""
+
   and printCollate attrs =
     let collate = attrs |> List.tryPick (function ComplexAttr ("collate", v) -> Some v | _ -> None)
     match collate with
@@ -104,7 +110,7 @@ module Printer =
   and printColumnTypeName attrs (typ: ColumnTypeDef) =
     let attrs = attrs @ typ.ColumnAttributes
     let typeName, attrs, nullable = columnTypeName attrs typ.ColumnTypeDef
-    (typeName + (printCollate attrs), nullable)
+    (typeName + (printIdentity attrs) + (printCollate attrs), nullable)
 
   let printColumnDef col =
     let typ, attrs = col.ColumnType
@@ -204,7 +210,8 @@ module Printer =
   | col, ComplexAttr ("default", value) ->
       let value = printAttributeValue value
       acc |> AList.add (Default ("DF_" + tableName + "_" + col)) [DefaultCol (col, value)]
-  | _col, ComplexAttr ("collate", _value) -> acc // do nothing
+  | _col, ComplexAttr ("collate", _value) -> acc // do nothing here
+  | _col, SimpleAttr "identity" -> acc // do nothing here
   | _col, SimpleAttr _ -> failwith "not implemented"
   | _col, ComplexAttr _ -> failwith "not implemented"
 
