@@ -96,9 +96,14 @@ module Printer =
     | EnumTypeDef typ -> printNonEnumType attrs typ.BaseType
 
   and printIdentity attrs =
-    let identity = attrs |> List.tryPick (function SimpleAttr "identity" -> Some (1, 1) | _ -> None)
+    let identity =
+      attrs
+      |> List.tryPick (function
+                       | SimpleAttr "identity" -> Some ("1", "1")
+                       | ComplexAttr ("identity", value) -> failwith "not implemented"
+                       | _ -> None)
     match identity with
-    | Some (x, y) -> " IDENTITY(" + (string x) + ", " + (string y) + ")"
+    | Some (seed, increment) -> " IDENTITY(" + seed + ", " + increment + ")"
     | None -> ""
 
   and printCollate attrs =
@@ -210,8 +215,9 @@ module Printer =
   | col, ComplexAttr ("default", value) ->
       let value = printAttributeValue value
       acc |> AList.add (Default ("DF_" + tableName + "_" + col)) [DefaultCol (col, value)]
-  | _col, ComplexAttr ("collate", _value) -> acc // do nothing here
-  | _col, SimpleAttr "identity" -> acc // do nothing here
+  | _col, SimpleAttr "identity"
+  | _col, ComplexAttr ("identity", _)
+  | _col, ComplexAttr ("collate", _) -> acc // do nothing here
   | _col, SimpleAttr _ -> failwith "not implemented"
   | _col, ComplexAttr _ -> failwith "not implemented"
 
