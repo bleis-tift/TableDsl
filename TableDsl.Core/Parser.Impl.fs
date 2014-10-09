@@ -209,8 +209,29 @@ module internal Impl =
              ColumnType = (colType, attrs) }
   }
 
+  let pTableComplexAttr = parse {
+    let! attrName = pName
+    do! pSkipOnelineToken "("
+    let! attrValues = sepBy pSqlValue (pchar ',')
+    do! pSkipOnelineToken ")"
+    return ComplexTableAttr (attrName, attrValues)
+  }
+
+  let pTableSimpleAttr = parse {
+    let! attrName = pName
+    return SimpleTableAttr attrName
+  }
+
+  let pTableAttribute = parse {
+    do! pSkipOnelineToken "[<"
+    let! attr = (attempt pTableComplexAttr <|> pTableSimpleAttr)
+    do! pSkipOnelineToken ">]"
+    return attr
+  }
+
   let pTableDef = parse {
     let! tableSummary = pSummaryOpt
+    let! tableAttributes = many (attempt pTableAttribute)
     do! pSkipToken "table"
     let! tableName = pTableName
     let! tableJpName = pJpNameOpt
@@ -218,7 +239,11 @@ module internal Impl =
     let! colDefs =
       sepEndBy (attempt pColumnDef) newline
       |> between (pSkipOnelineToken "{") (pSkipOnelineToken "}")
-    return TableDef { TableSummary = tableSummary; TableName = tableName; TableJpName = tableJpName; ColumnDefs = colDefs }
+    return TableDef { TableSummary = tableSummary
+                      TableAttributes = tableAttributes
+                      TableName = tableName
+                      TableJpName = tableJpName
+                      ColumnDefs = colDefs }
   }
 
   // TODO : 一通り完成したら、エラーメッセージを入れる？(例: 「トップレベルの要素はcoltypeかtableのみが許されています。」)

@@ -101,6 +101,17 @@ module PrinterTest =
         /// ユーザ名
         Name[名前]: nvarchar(16)
       }"""
+      """
+      [<Master>]
+      table Apps = {
+        Id: int
+      }
+      [<Hoge(0, Piyo)>]
+      [<Foo>]
+      table Users = {
+        Id: int
+      }
+      """
     ]
     |> List.map adjust
 

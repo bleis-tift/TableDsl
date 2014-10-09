@@ -1,4 +1,8 @@
 ﻿namespace TableDsl
+
+type TableAttribute =
+  | SimpleTableAttr of string
+  | ComplexTableAttr of string * string list
  
 type AttributeValueElem =
   | Lit of string
@@ -84,6 +88,7 @@ with
 /// テーブル定義
 type TableDef = {
   TableSummary: Summary option
+  TableAttributes: TableAttribute list
   TableName: string
   TableJpName: string option
   ColumnDefs: ColumnDef list

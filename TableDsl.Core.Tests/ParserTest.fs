@@ -225,6 +225,7 @@ module ParserTest =
       |> parse
       |> should equal
            [ { TableSummary = None
+               TableAttributes = []
                TableName = "Users"
                TableJpName = None
                ColumnDefs =
@@ -252,6 +253,7 @@ module ParserTest =
       |> parse
       |> should equal
            [ { TableSummary = None
+               TableAttributes = []
                TableName = "Users"
                TableJpName = None
                ColumnDefs =
@@ -263,6 +265,7 @@ module ParserTest =
                      ColumnType = (builtin1 "nvarchar" "16", []) } ]
              }
              { TableSummary = None
+               TableAttributes = []
                TableName = "DeletedUsers"
                TableJpName = None
                ColumnDefs =
@@ -284,6 +287,7 @@ module ParserTest =
       |> parse
       |> should equal
            [ { TableSummary = None
+               TableAttributes = []
                TableName = "Users"
                TableJpName = None
                ColumnDefs =
@@ -303,6 +307,7 @@ module ParserTest =
       |> parse
       |> should equal
            [ { TableSummary = None
+               TableAttributes = []
                TableName = "Users"
                TableJpName = None
                ColumnDefs =
@@ -322,6 +327,7 @@ module ParserTest =
       |> parse
       |> should equal
            [ { TableSummary = None
+               TableAttributes = []
                TableName = "Users"
                TableJpName = None
                ColumnDefs =
@@ -344,6 +350,7 @@ module ParserTest =
       |> parse
       |> should equal
            [ { TableSummary = None
+               TableAttributes = []
                TableName = "Users"
                TableJpName = None
                ColumnDefs =
@@ -363,6 +370,7 @@ module ParserTest =
       |> parse
       |> should equal
            [ { TableSummary = None
+               TableAttributes = []
                TableName = "Users"
                TableJpName = None
                ColumnDefs =
@@ -393,6 +401,7 @@ module ParserTest =
       |> parse
       |> should equal
            [ { TableSummary = Some "ユーザテーブル\nユーザを表す。"
+               TableAttributes = []
                TableName = "Users"
                TableJpName = Some "ユーザテーブル"
                ColumnDefs =

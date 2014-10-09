@@ -42,9 +42,17 @@ module TableDef =
     let typ = printColumnType colDef.ColumnType
     sprintf "%s  %s:%s" summary name typ
 
+  let printTableAttributes attrs =
+    attrs
+    |> List.map (function
+                 | SimpleTableAttr name -> "[<" + name + ">]"
+                 | ComplexTableAttr (name, values) -> "[<" + name + "(" + (values |> Str.join ", ") + ")>]")
+    |> Str.join "\n"
+
   let print table =
     let summary = printSummary 0 table.TableSummary
+    let attrs = printTableAttributes table.TableAttributes
     let name = table.TableName
     let jpName = printJpName table.TableJpName
     let body = table.ColumnDefs |> List.map printColumnDef |> Str.join "\n"
-    sprintf "%stable %s%s = {\n%s\n}" summary name jpName body
+    sprintf "%s%stable %s%s = {\n%s\n}" summary attrs name jpName body
