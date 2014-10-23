@@ -3,6 +3,12 @@
 open Basis.Core
 open TableDsl.Printer
 
+type PrinterAttribute (name: string) =
+  inherit System.Attribute()
+
+  member __.Name = name
+
+[<Printer("tabledsl")>]
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Printer =
   let printElem = function

@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TableDsl", "TableDsl\TableDsl.fsproj", "{8C1241AF-0D90-476E-A6DE-5D045DAB1F42}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C55F2241-E6CB-4321-B622-BF1EA6EB3594} = {C55F2241-E6CB-4321-B622-BF1EA6EB3594}
+	EndProjectSection
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TableDsl.Core", "TableDsl.Core\TableDsl.Core.fsproj", "{65C1E66D-89D5-4421-A22E-682027B37ACB}"
 EndProject

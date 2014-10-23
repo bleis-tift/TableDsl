@@ -70,6 +70,7 @@ type AlterTableCol =
   | IndexCol of int * string
   | DefaultCol of string * string
 
+[<Printer("sql")>]
 module Printer =
   let printAttributeValue attrValueElems =
     let printAttrValueElem = function
