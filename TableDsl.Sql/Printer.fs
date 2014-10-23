@@ -72,6 +72,9 @@ type AlterTableCol =
 
 [<Printer("sql")>]
 module Printer =
+  open System.IO
+  open System.Text
+
   let printAttributeValue attrValueElems =
     let printAttrValueElem = function
     | Lit l -> l
@@ -269,7 +272,7 @@ module Printer =
   let printSummaryAndJpName tableDef =
     None
 
-  let print elems =
+  let printSql elems =
     let targets =
       elems |> List.choose (function TableDef t -> Some t | _ -> None)
 
@@ -289,3 +292,11 @@ module Printer =
     createTable
       + (if alterTable <> "" then "\n" + alterTable else "")
       + (if summaryAndJpName <> "" then "\n" + summaryAndJpName else "")
+
+  let print (output: string option, _options: Map<string, string>, elems) =
+    let printed = printSql elems
+    match output with
+    | Some output ->
+        File.WriteAllText(output, printed, Encoding.UTF8)
+    | None ->
+        printfn "%s" printed

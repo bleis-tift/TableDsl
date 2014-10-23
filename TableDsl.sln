@@ -6,6 +6,7 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TableDsl", "TableDsl\TableDsl.fsproj", "{8C1241AF-0D90-476E-A6DE-5D045DAB1F42}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C55F2241-E6CB-4321-B622-BF1EA6EB3594} = {C55F2241-E6CB-4321-B622-BF1EA6EB3594}
+		{7D12C3AC-F56A-450D-A24A-D59AE25C73E2} = {7D12C3AC-F56A-450D-A24A-D59AE25C73E2}
 	EndProjectSection
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TableDsl.Core", "TableDsl.Core\TableDsl.Core.fsproj", "{65C1E66D-89D5-4421-A22E-682027B37ACB}"
@@ -15,6 +16,8 @@ EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TableDsl.Sql", "TableDsl.Sql\TableDsl.Sql.fsproj", "{C55F2241-E6CB-4321-B622-BF1EA6EB3594}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TableDsl.Sql.Tests", "TableDsl.Sql.Tests\TableDsl.Sql.Tests.fsproj", "{C8F84E6E-461C-42E6-8888-679F8EDDCE2B}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TableDsl.Excel", "TableDsl.Excel\TableDsl.Excel.fsproj", "{7D12C3AC-F56A-450D-A24A-D59AE25C73E2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -42,6 +45,10 @@ Global
 		{C8F84E6E-461C-42E6-8888-679F8EDDCE2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C8F84E6E-461C-42E6-8888-679F8EDDCE2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C8F84E6E-461C-42E6-8888-679F8EDDCE2B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D12C3AC-F56A-450D-A24A-D59AE25C73E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D12C3AC-F56A-450D-A24A-D59AE25C73E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D12C3AC-F56A-450D-A24A-D59AE25C73E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D12C3AC-F56A-450D-A24A-D59AE25C73E2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -36,11 +36,11 @@ let parse argv =
   | [] -> failwith "please "
 
 type Plugin =
-  | PrinterPlugin of (TableDsl.Element list -> string)
+  | PrinterPlugin of (string option * Map<string, string> * TableDsl.Element list -> unit)
 
 let getPrinterFunction (typ: Type) =
-  let f (m: MethodInfo) (elems: TableDsl.Element list) =
-    m.Invoke(null, [| elems |]) :?> string
+  let f (m: MethodInfo) (output: string option, options: Map<string, string>, elems: TableDsl.Element list) =
+    m.Invoke(null, [| output; options; elems |]) |> ignore
 
   f (typ.GetMethod("print"))
 
@@ -63,19 +63,20 @@ let print targetFile options =
   | Some (format: string) ->
       let input = File.ReadAllText(targetFile, Encoding.UTF8)
       let elems = TableDsl.Parser.parse input
-      let printed =
-        let format = format.ToLower()
-        if format = "tabledsl" then
-          TableDsl.Printer.print elems
-        else
-          match tryLoadPlugin (function :? TableDsl.PrinterAttribute as attr -> attr.Name = format | _ -> false) with
-          | Some (PrinterPlugin printer) -> printer elems
-          | None -> failwithf "printer(%s) not found." format
-      match options |> Map.tryFind "output" with
-      | Some output ->
-          File.WriteAllText(output, printed, Encoding.UTF8)
-      | None ->
-          printfn "%s" printed
+      let format = format.ToLower()
+      if format = "tabledsl" then
+        let printed = TableDsl.Printer.print elems
+        match options |> Map.tryFind "output" with
+        | Some output ->
+            File.WriteAllText(output, printed, Encoding.UTF8)
+        | None ->
+            printfn "%s" printed
+      else
+        match tryLoadPlugin (function :? TableDsl.PrinterAttribute as attr -> attr.Name.ToLower() = format | _ -> false) with
+        | Some (PrinterPlugin printer) ->
+            let output = options |> Map.tryFind "output"
+            printer (output, options, elems)
+        | None -> failwithf "printer(%s) is not found." format
   | None ->
       failwith "print subcommand needs format option."
 
@@ -90,4 +91,7 @@ let main argv =
   with
     e ->
       eprintfn "%s" e.Message
+      if e.InnerException <> null then
+        eprintfn "%s" e.InnerException.Message
+        eprintfn "%s" e.InnerException.StackTrace
       -1
