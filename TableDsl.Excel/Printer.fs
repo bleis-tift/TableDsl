@@ -40,7 +40,19 @@ module Printer =
     sheet |> drawBox mergedCell
     sheet.Cells.[col + string row].Value <- str
 
-  let writeColumns (sheet: ExcelWorksheet) (i: int) (colDef: ColumnDef) =
+  let indexNo = ref 1
+
+  let writeIndex (sheet: ExcelWorksheet) (table: TableDef) (colDef: ColumnDef) = function
+  | "PK", _col ->
+      let row = !indexNo + 29
+      sheet |> setString 1 ("A", row) (string !indexNo)
+      sheet |> setString 1 ("C", row) ("PK_" + table.TableName)
+      sheet |> setString 1 ("K", row) (match colDef.ColumnName with Wildcard -> (* todo *) "not implemented" | ColumnName (name, _) -> name)
+      sheet |> setString 1 ("S", row) "○"
+      incr indexNo
+  | _ -> ()
+
+  let writeColumns (sheet: ExcelWorksheet) table (i: int) (colDef: ColumnDef) =
     let no = string (i + 1)
     let row = i + 8
 
@@ -54,10 +66,16 @@ module Printer =
         sheet |> setString 1 ("X", row) (if typeName.Nullable then "■" else "□")
         sheet |> setString 1 ("AA", row) (match typeName.Attributes |> List.tryFind (fst >> (=)"default") with Some (_, v) -> v | None -> "-")
         sheet |> setString 1 ("AF", row) (match colDef.ColumnSummary with Some summary -> summary | None -> "-")
+
+        let attrs = typeName.Attributes
+        attrs
+        |> List.iter (writeIndex sheet table colDef)
     | Failure f ->
         failwith (ConvertError.toStr f)
 
   let write (package: ExcelPackage) (table: TableDef) =
+    indexNo := 1
+
     let sheetName = match table.TableJpName with Some name -> name | None -> table.TableName
     let sheet = package.Workbook.Worksheets.Copy("0", sheetName)
     package.Workbook.Worksheets.MoveBefore(sheetName, "0")
@@ -67,7 +85,7 @@ module Printer =
     sheet |> setString 2 ("I", 3) (match table.TableSummary with Some summary -> summary | None -> "-")
 
     table.ColumnDefs
-    |> List.iteri (writeColumns sheet)
+    |> List.iteri (writeColumns sheet table)
 
   let print (output: string option, options: Map<string, string>, elems: Element list) =
     match output, options |> Map.tryFind "template" with
