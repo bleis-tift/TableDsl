@@ -1,0 +1,13 @@
+﻿/// ユーザです。
+table Users[ユーザ] = {
+  Id[ユーザId]: { uniqueidentifier with PK }
+  Name[ユーザ名]: nvarchar(32)
+  RegisteredAt[登録日時]: { datetime2 with default = SYSUTCDATETIME() }
+}
+
+table UnregisteredUsers[退会済ユーザ] = {
+  Id[退会ユーザID]: { uniqueidentifier with PK; FK = Users.Id }
+  /// ユーザが退会時に入力してくれなかった場合はNULLです。
+  Reason[退会理由]: nullable(nvarchar(max))
+  UnregisteredAt[退会日時]: { datetime2 with default = SYSUTCDATETIME() }
+}
