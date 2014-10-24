@@ -1,9 +1,12 @@
 ﻿namespace TableDsl.Excel
 
 open TableDsl
+open TableDsl.PrinterPluginUtil
 
 open System.IO
 open OfficeOpenXml
+
+open Basis.Core
 
 [<PrinterPlugin("excel")>]
 module Printer =
@@ -41,14 +44,18 @@ module Printer =
     let no = string (i + 1)
     let row = i + 8
 
-    sheet |> setString 1 ("A", row) no
-    sheet |> setString 1 ("C", row) (match colDef.ColumnName with Wildcard -> (* todo *) "not implemented" | ColumnName (name, _) -> name)
-    sheet |> setString 1 ("K", row) (match colDef.ColumnName with Wildcard -> (* todo *) "not implemented" | ColumnName (_, Some name) -> name | _ -> "-")
-    sheet |> setString 1 ("S", row) (match (fst colDef.ColumnType).ColumnTypeDef with BuiltinType ty -> ty.TypeName | _ -> (* todo *) "not implemented")
-    sheet |> setString 1 ("X", row) (* todo nullable *) ""
-    sheet |> setString 1 ("AA", row) (* todo default value *) ""
-    sheet |> setString 1 ("AF", row) (match colDef.ColumnSummary with Some summary -> summary | None -> "-")
-    ()
+    let colTypeDef, attrs = colDef.ColumnType
+    match ColumnTypeDef.tryToTypeName attrs colTypeDef with
+    | Success typeName ->
+        sheet |> setString 1 ("A", row) no
+        sheet |> setString 1 ("C", row) (match colDef.ColumnName with Wildcard -> (* todo *) "not implemented" | ColumnName (name, _) -> name)
+        sheet |> setString 1 ("K", row) (match colDef.ColumnName with Wildcard -> (* todo *) "not implemented" | ColumnName (_, Some name) -> name | _ -> "-")
+        sheet |> setString 1 ("S", row) typeName.TypeName
+        sheet |> setString 1 ("X", row) (if typeName.Nullable then "■" else "□")
+        sheet |> setString 1 ("AA", row) (* todo default value *) ""
+        sheet |> setString 1 ("AF", row) (match colDef.ColumnSummary with Some summary -> summary | None -> "-")
+    | Failure f ->
+        failwith (ConvertError.toStr f)
 
   let write (package: ExcelPackage) (table: TableDef) =
     let sheetName = match table.TableJpName with Some name -> name | None -> table.TableName
