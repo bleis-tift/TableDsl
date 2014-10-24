@@ -72,7 +72,7 @@ let print targetFile options =
         | None ->
             printfn "%s" printed
       else
-        match tryLoadPlugin (function :? TableDsl.PrinterAttribute as attr -> attr.Name.ToLower() = format | _ -> false) with
+        match tryLoadPlugin (function :? TableDsl.PrinterPluginAttribute as attr -> attr.Name.ToLower() = format | _ -> false) with
         | Some (PrinterPlugin printer) ->
             let output = options |> Map.tryFind "output"
             printer (output, options, elems)

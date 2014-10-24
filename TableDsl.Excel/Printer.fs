@@ -5,7 +5,7 @@ open TableDsl
 open System.IO
 open OfficeOpenXml
 
-[<Printer("excel")>]
+[<PrinterPlugin("excel")>]
 module Printer =
 
   /// マージを解除する

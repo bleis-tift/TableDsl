@@ -70,7 +70,7 @@ type AlterTableCol =
   | IndexCol of int * string
   | DefaultCol of string * string
 
-[<Printer("sql")>]
+[<PrinterPlugin("sql")>]
 module Printer =
   open System.IO
   open System.Text

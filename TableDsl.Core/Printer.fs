@@ -3,15 +3,15 @@
 open Basis.Core
 open TableDsl.Printer
 
-type PrinterAttribute (name: string) =
+type PrinterPluginAttribute (name: string) =
   inherit System.Attribute()
 
   member __.Name = name
 
-[<Printer("tabledsl")>]
+[<PrinterPlugin("tabledsl")>]
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Printer =
-  let printElem = function
+  let private printElem = function
   | TableDef table -> TableDef.print table
   | ColTypeDef col -> ColTypeDef.print col
 
