@@ -52,7 +52,7 @@ module Printer =
         sheet |> setString 1 ("K", row) (match colDef.ColumnName with Wildcard -> (* todo *) "not implemented" | ColumnName (_, Some name) -> name | _ -> "-")
         sheet |> setString 1 ("S", row) typeName.TypeName
         sheet |> setString 1 ("X", row) (if typeName.Nullable then "■" else "□")
-        sheet |> setString 1 ("AA", row) (* todo default value *) ""
+        sheet |> setString 1 ("AA", row) (match typeName.Attributes |> List.tryFind (fst >> (=)"default") with Some (_, v) -> v | None -> "-")
         sheet |> setString 1 ("AF", row) (match colDef.ColumnSummary with Some summary -> summary | None -> "-")
     | Failure f ->
         failwith (ConvertError.toStr f)
