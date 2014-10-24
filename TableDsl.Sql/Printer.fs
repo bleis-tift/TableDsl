@@ -2,6 +2,7 @@
 
 open Basis.Core
 open TableDsl
+open TableDsl.PrinterPluginUtil
 
 type AList<'TKey, 'TValue> = ('TKey * 'TValue) list
 
@@ -82,44 +83,24 @@ module Printer =
 
     attrValueElems |> List.map printAttrValueElem |> Str.concat
 
-  let rec printNonEnumType attrs = function
-  | { TypeName = "nullable"; TypeParameters = typeParams } ->
-      let innerTypeName = typeParams |> List.map (function BoundValue v -> v | BoundType t -> printColumnTypeName [] t |> fst) |> Str.concat
-      (innerTypeName, attrs, " NULL")
-  | typ ->
-      let typeParams =
-        match typ.TypeParameters with
-        | [] -> ""
-        | notEmpty -> "(" + (notEmpty |> List.map (function (BoundValue v) -> v | _ -> "oops!") |> Str.join ", ") + ")"
-      (typ.TypeName + typeParams, attrs, " NOT NULL")
-
-  and columnTypeName attrs colTyp =
-    match colTyp with
-    | BuiltinType typ -> printNonEnumType attrs typ
-    | AliasDef (_typ, orgType) -> columnTypeName (attrs @ orgType.ColumnAttributes) orgType.ColumnTypeDef
-    | EnumTypeDef typ -> printNonEnumType attrs typ.BaseType
-
-  and printIdentity attrs =
-    let identity =
-      attrs
-      |> List.tryPick (function
-                       | SimpleColAttr "identity" -> Some ("1", "1")
-                       | ComplexColAttr ("identity", value) -> failwith "not implemented"
-                       | _ -> None)
+  let printIdentity attrs =
+    let identity = attrs |> List.tryFind (function "identity", _ -> true | _ -> false)
     match identity with
-    | Some (seed, increment) -> " IDENTITY(" + seed + ", " + increment + ")"
+    | Some (_, _value) -> " IDENTITY(1, 1)"
     | None -> ""
 
-  and printCollate attrs =
-    let collate = attrs |> List.tryPick (function ComplexColAttr ("collate", v) -> Some v | _ -> None)
+  let printCollate attrs =
+    let collate = attrs |> List.tryFind (function "collate", _ -> true | _ -> false)
     match collate with
-    | Some collate -> " COLLATE " + (printAttributeValue collate)
+    | Some (_, collate) -> " COLLATE " + collate
     | None -> ""
 
-  and printColumnTypeName attrs (typ: ColumnTypeDef) =
-    let attrs = attrs @ typ.ColumnAttributes
-    let typeName, attrs, nullable = columnTypeName attrs typ.ColumnTypeDef
-    (typeName + (printIdentity attrs) + (printCollate attrs), nullable)
+  let printColumnTypeName attrs (typ: ColumnTypeDef) =
+    match ColumnTypeDef.tryToTypeName attrs typ with
+    | Success typeName ->
+        (typeName.TypeName + (printIdentity typeName.Attributes) + (printCollate typeName.Attributes), if typeName.Nullable then " NULL" else " NOT NULL")
+    | Failure f ->
+        failwithf "%s" (ConvertError.toStr f)
 
   let printColumnDef col =
     let typ, attrs = col.ColumnType

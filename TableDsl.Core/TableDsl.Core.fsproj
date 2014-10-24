@@ -61,6 +61,7 @@
     <Compile Include="Printer.ColTypeDef.fs" />
     <Compile Include="Printer.TableDef.fs" />
     <Compile Include="Printer.fs" />
+    <Compile Include="PrinterPluginUtil.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Basis.Core">
