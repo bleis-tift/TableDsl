@@ -40,12 +40,18 @@ module Printer =
     sheet |> drawBox mergedCell
     sheet.Cells.[col + string row].Value <- str
 
+  let inline setNum totalLines (col, row) (num: ^a) (sheet: ExcelWorksheet) =
+    // 一旦マージを解除し、再度マージし、枠線を引き、値を設定する
+    let mergedCell = sheet |> remerge (col, row) totalLines
+    sheet |> drawBox mergedCell
+    sheet.Cells.[col + string row].Value <- float num
+
   let indexNo = ref 1
 
   let writeIndex (sheet: ExcelWorksheet) (table: TableDef) (colDef: ColumnDef) = function
   | "PK", _col ->
       let row = !indexNo + 29
-      sheet |> setString 1 ("A", row) (string !indexNo)
+      sheet |> setNum 1 ("A", row) !indexNo
       sheet |> setString 1 ("C", row) ("PK_" + table.TableName)
       sheet |> setString 1 ("K", row) (match colDef.ColumnName with Wildcard -> (* todo *) "not implemented" | ColumnName (name, _) -> name)
       sheet |> setString 1 ("S", row) "○"
@@ -53,7 +59,7 @@ module Printer =
       incr indexNo
   | "FK", fkCols ->
       let row = !indexNo + 29
-      sheet |> setString 1 ("A", row) (string !indexNo)
+      sheet |> setNum 1 ("A", row) !indexNo
       sheet |> setString 1 ("C", row) ("FK_" + table.TableName)
       sheet |> setString 1 ("K", row) (match colDef.ColumnName with Wildcard -> (* todo *) "not implemented" | ColumnName (name, _) -> name)
       sheet |> setString 1 ("U", row) "○"
@@ -63,13 +69,13 @@ module Printer =
   | _ -> ()
 
   let writeColumns (sheet: ExcelWorksheet) table (i: int) (colDef: ColumnDef) =
-    let no = string (i + 1)
+    let no = i + 1
     let row = i + 8
 
     let colTypeDef, attrs = colDef.ColumnType
     match ColumnTypeDef.tryToTypeName attrs colTypeDef with
     | Success typeName ->
-        sheet |> setString 1 ("A", row) no
+        sheet |> setNum 1 ("A", row) no
         sheet |> setString 1 ("C", row) (match colDef.ColumnName with Wildcard -> (* todo *) "not implemented" | ColumnName (name, _) -> name)
         sheet |> setString 1 ("K", row) (match colDef.ColumnName with Wildcard -> (* todo *) "not implemented" | ColumnName (_, Some name) -> name | _ -> "-")
         sheet |> setString 1 ("S", row) typeName.TypeName
