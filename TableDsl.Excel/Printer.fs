@@ -49,6 +49,16 @@ module Printer =
       sheet |> setString 1 ("C", row) ("PK_" + table.TableName)
       sheet |> setString 1 ("K", row) (match colDef.ColumnName with Wildcard -> (* todo *) "not implemented" | ColumnName (name, _) -> name)
       sheet |> setString 1 ("S", row) "○"
+      sheet |> setString 1 ("AF", row) "-"
+      incr indexNo
+  | "FK", fkCols ->
+      let row = !indexNo + 29
+      sheet |> setString 1 ("A", row) (string !indexNo)
+      sheet |> setString 1 ("C", row) ("FK_" + table.TableName)
+      sheet |> setString 1 ("K", row) (match colDef.ColumnName with Wildcard -> (* todo *) "not implemented" | ColumnName (name, _) -> name)
+      sheet |> setString 1 ("U", row) "○"
+      sheet |> setString 1 ("W", row) fkCols
+      sheet |> setString 1 ("AF", row) "-"
       incr indexNo
   | _ -> ()
 
