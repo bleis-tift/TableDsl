@@ -13,3 +13,11 @@ mkdir nuget-packages
 mv TableDsl.Core\*.nupkg nuget-packages
 mv TableDsl.Sql\*.nupkg nuget-packages
 mv TableDsl\*.nupkg nuget-packages
+
+cd nuget-packages
+
+ls *.nupkg | %{
+  echo "..\.nuget\nuget.exe push $_" >> Push-All.ps1
+}
+
+cd ..
