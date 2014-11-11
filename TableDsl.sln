@@ -19,6 +19,13 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TableDsl.Sql.Tests", "Table
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TableDsl.Excel", "TableDsl.Excel\TableDsl.Excel.fsproj", "{7D12C3AC-F56A-450D-A24A-D59AE25C73E2}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{F77F90D4-2C8A-4922-BA45-8D9A7360D297}"
+	ProjectSection(SolutionItems) = preProject
+		.nuget\NuGet.Config = .nuget\NuGet.Config
+		.nuget\NuGet.exe = .nuget\NuGet.exe
+		.nuget\NuGet.targets = .nuget\NuGet.targets
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
