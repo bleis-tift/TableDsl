@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>bleis-tift</authors>
+    <projectUrl>https://github.com/bleis-tift/TableDsl</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>TableDslを処理するプログラムを提供します。</description>
+    <tags>table dsl</tags>
+  </metadata>
+  <files>
+    <file src="bin\Release\*.exe" target="tools" />
+    <file src="bin\Release\*.config" target="tools" />
+    <file src="bin\Release\*.dll" target="tools" />
+    <file src="bin\Release\plugins\TableDsl.Sql.dll" target="tools\plugins" />
+    <file src="bin\Release\plugins\EPPlus.dll" target="tools\plugins" />
+    <file src="bin\Release\ja\*.dll" target="tools\ja" />
+  </files>
+</package>

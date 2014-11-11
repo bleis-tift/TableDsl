@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>bleis-tift</authors>
+    <projectUrl>https://github.com/bleis-tift/TableDsl</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>TableDslからCREATE TABLE文を生成するためのPrinter Pluginです。</description>
+    <tags>table dsl sql printer</tags>
+  </metadata>
+</package>

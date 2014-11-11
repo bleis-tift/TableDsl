@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>bleis-tift</authors>
+    <projectUrl>https://github.com/bleis-tift/TableDsl</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>TableDslのコアとなるライブラリです。TableDslのパーサと、TableDslのモデルを表す型を含んでいます。</description>
+    <tags>table dsl</tags>
+  </metadata>
+</package>
