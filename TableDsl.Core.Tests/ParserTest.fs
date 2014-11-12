@@ -428,3 +428,66 @@ module ParserTest =
          | Success res -> failwithf "oops! Success! : %A" res
          | Failure (FParsecDefaultMessage err) -> failwithf "oops! : %s" err
          | Failure (UserFriendlyMessages errs) -> errs |> List.map (fun (_, _, msg) -> msg) |> should equal ["stringという型が見つかりませんでした。"]
+
+    [<Test>]
+    let ``simple table attr`` () =
+      """
+      [<Master>]
+      table Apps = {
+        Id: int
+      }"""
+      |> parse
+      |> should equal
+           [ { TableSummary = None
+               TableAttributes = [SimpleTableAttr "Master"]
+               TableName = "Apps"
+               TableJpName = None
+               ColumnDefs =
+                 [ { ColumnSummary = None
+                     ColumnName = ColumnName ("Id", None)
+                     ColumnType = (builtin0 "int", []) }]
+             }
+           ]
+
+    [<Test>]
+    let ``complex table attr`` () =
+      """
+      [<Foo(0, abcd)>]
+      table Apps = {
+        Id: int
+      }
+      """
+      |> parse
+      |> should equal
+           [ { TableSummary = None
+               TableAttributes = [ComplexTableAttr ("Foo", ["0"; "abcd"])]
+               TableName = "Apps"
+               TableJpName = None
+               ColumnDefs =
+                 [ { ColumnSummary = None
+                     ColumnName = ColumnName ("Id", None)
+                     ColumnType = (builtin0 "int", []) }]
+             }
+           ]
+
+    [<Test>]
+    let ``table attr combination`` () =
+      """
+      [<Master>]
+      [<Foo(0, abcd)>]
+      table Apps = {
+        Id: int
+      }
+      """
+      |> parse
+      |> should equal
+           [ { TableSummary = None
+               TableAttributes = [SimpleTableAttr "Master"; ComplexTableAttr ("Foo", ["0"; "abcd"])]
+               TableName = "Apps"
+               TableJpName = None
+               ColumnDefs =
+                 [ { ColumnSummary = None
+                     ColumnName = ColumnName ("Id", None)
+                     ColumnType = (builtin0 "int", []) }]
+             }
+           ]

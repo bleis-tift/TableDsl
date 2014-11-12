@@ -212,7 +212,7 @@ module internal Impl =
   let pTableComplexAttr = parse {
     let! attrName = pName
     do! pSkipOnelineToken "("
-    let! attrValues = sepBy pSqlValue (pchar ',')
+    let! attrValues = sepBy pSqlValue (pchar ',' .>> wsnl)
     do! pSkipOnelineToken ")"
     return ComplexTableAttr (attrName, attrValues)
   }
@@ -223,6 +223,7 @@ module internal Impl =
   }
 
   let pTableAttribute = parse {
+    do! wsnl |>> ignore
     do! pSkipOnelineToken "[<"
     let! attr = (attempt pTableComplexAttr <|> pTableSimpleAttr)
     do! pSkipOnelineToken ">]"
