@@ -39,7 +39,7 @@ module internal State =
       builtin "text" 0
       builtin "ntext" 0
       builtin "image" 0
-      builtin "nchar" 0
+      builtin "nchar" 1
       builtin "nvarchar" 1
       builtin "binary" 1
       builtin "varbinary" 1
