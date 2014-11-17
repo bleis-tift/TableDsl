@@ -33,7 +33,7 @@ let parse argv =
   match argv with
   | "print"::argv -> parse' { SubCommandType = Print; TargetFile = ""; Options = Map.empty } argv
   | other::_ -> failwithf "unknown subcommand: %s" other
-  | [] -> failwith "please "
+  | [] -> failwith "please input subcommand."
 
 type Plugin =
   | PrinterPlugin of (string option * Map<string, string> * TableDsl.Element list -> unit)
