@@ -68,22 +68,22 @@ module internal Impl =
 
   let resolveType typeName typeParams env =
     let resolved =
-      env |> List.tryFind (fun (name, paramCount, _, _) -> name = typeName && paramCount = (List.length typeParams)) 
+      env |> List.tryFind (fun (name, paramCount, _, _, _, _) -> name = typeName && paramCount = (List.length typeParams)) 
     match resolved with
-    | Some (name, paramCount, t, attrs) ->
-        let typeDef, attrs =
-          match t with
-          | BuiltinType ty -> (BuiltinType { ty with TypeParameters = typeParams }), attrs
-          | AliasDef (ty, originalType) ->
-              let replacingMap =
-                Map.ofList (
-                  (ty.TypeParameters, typeParams)
-                  ||> List.zip
-                  |> List.choose (function (TypeVariable key, value) -> Some (key, value) | _ -> None))
-              let attrs = attrs |> List.map (expandAttr replacingMap)
-              (AliasDef ({ ty with TypeParameters = typeParams }, replaceTypeParams replacingMap originalType)), attrs
-          | EnumTypeDef ty -> (EnumTypeDef ty), attrs
-        preturn { ColumnSummary = None; ColumnTypeDef = typeDef; ColumnJpName = None; ColumnAttributes = attrs }
+    | Some (name, paramCount, t, attrs, colSummary, colJpName) ->
+      let typeDef, attrs =
+        match t with
+        | BuiltinType ty -> (BuiltinType { ty with TypeParameters = typeParams }), attrs
+        | AliasDef (ty, originalType) ->
+            let replacingMap =
+              Map.ofList (
+                (ty.TypeParameters, typeParams)
+                ||> List.zip
+                |> List.choose (function (TypeVariable key, value) -> Some (key, value) | _ -> None))
+            let attrs = attrs |> List.map (expandAttr replacingMap)
+            (AliasDef ({ ty with TypeParameters = typeParams }, replaceTypeParams replacingMap originalType)), attrs
+        | EnumTypeDef ty -> (EnumTypeDef ty), attrs
+      preturn { ColumnSummary = colSummary; ColumnTypeDef = typeDef; ColumnJpName = colJpName; ColumnAttributes = attrs }
     | None -> failFatally (sprintf "%sという型が見つかりませんでした。" typeName)
 
   let pClosedTypeRefWithoutAttributes = parse {
@@ -192,7 +192,7 @@ module internal Impl =
     let! colTypeJpName = pJpNameOpt
     do! pSkipToken "="
     let! typ, attrs = pTypeDef colTypeName colTypeParams
-    do! updateUserState (fun state -> (colTypeName, colTypeParams.Length, typ, attrs)::state)
+    do! updateUserState (fun state -> (colTypeName, colTypeParams.Length, typ, attrs, colTypeSummary, colTypeJpName)::state)
     return ColTypeDef { ColumnSummary = colTypeSummary; ColumnTypeDef = typ; ColumnJpName = colTypeJpName; ColumnAttributes = attrs }
   }
 

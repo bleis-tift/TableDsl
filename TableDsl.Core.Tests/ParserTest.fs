@@ -491,3 +491,58 @@ module ParserTest =
                      ColumnType = (builtin0 "int", []) }]
              }
            ]
+    
+  module ComplexDef =
+
+    let builtin1 name _1 =
+      { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [TypeVariable _1] }
+        ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None }
+
+    [<Test>]
+    let ``type def is expanded inline in table def`` () =
+      let colDef p = 
+        { ColumnTypeDef = AliasDef ({ TypeName = "Name"; TypeParameters = p }, builtin1 "nvarchar" "@n")
+                          ColumnAttributes = [ ComplexColAttr ("collate", [ Lit "Japanese_BIN" ]); ComplexColAttr ("default", [ Lit "42" ]) ]
+                          ColumnSummary = Some "名前を表します。"
+                          ColumnJpName = Some "名前" }
+      """
+      /// 名前を表します。
+      coltype Name(@n)[名前] = { nvarchar(@n) with collate = Japanese_BIN; default = 42 }
+
+      /// ユーザテーブル
+      /// ユーザを表す。
+      table Users[ユーザテーブル] = {
+        /// ID
+        Id[ID]: int
+        /// ユーザ名
+        _: Name(256)
+      }"""
+      |> parse
+      |> should equal
+            [ ColTypeDef (colDef [TypeVariable "@n"])
+              TableDef
+                { TableSummary = Some "ユーザテーブル\nユーザを表す。"
+                  TableAttributes = []
+                  TableName = "Users"
+                  TableJpName = Some "ユーザテーブル"
+                  ColumnDefs = 
+                    [
+                      { ColumnSummary = Some "ID" 
+                        ColumnName = ColumnName ("Id", Some "ID")
+                        ColumnType = (builtin0 "int", []) }
+                      { ColumnSummary = Some "ユーザ名" 
+                        ColumnName = Wildcard
+                        ColumnType = 
+                          { ColumnTypeDef = 
+                              AliasDef (
+                                { TypeName = "Name"; 
+                                  TypeParameters = [BoundValue "256"] }, 
+                                  { ColumnTypeDef = BuiltinType { TypeName = "nvarchar"; TypeParameters = [BoundValue "256"] }
+                                    ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None })
+                            ColumnAttributes = [ ComplexColAttr ("collate", [ Lit "Japanese_BIN" ]); ComplexColAttr ("default", [ Lit "42" ])]
+                            ColumnSummary = Some "名前を表します。"
+                            ColumnJpName = Some "名前" },  []
+                      }
+                    ]
+                }
+            ]
