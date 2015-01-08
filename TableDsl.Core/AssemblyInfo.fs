@@ -7,7 +7,7 @@ open System.Runtime.InteropServices
 [<assembly: AssemblyProduct("TableDsl.Core")>]
 [<assembly: Guid("A812361B-8B90-46F0-8D34-76D8462204D5")>]
 
-[<assembly: AssemblyVersion("1.0.0.0")>]
-[<assembly: AssemblyFileVersion("1.0.0.0")>]
+[<assembly: AssemblyVersion("1.0.1.0")>]
+[<assembly: AssemblyFileVersion("1.0.1.0")>]
 
 do ()
