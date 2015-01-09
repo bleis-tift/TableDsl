@@ -157,7 +157,7 @@ module internal Impl =
     let! based, attrs = pOpenTypeRef
     match based.ColumnTypeDef with
     | BuiltinType typ -> return (EnumTypeDef { EnumTypeName = name; BaseType = typ; Cases = cases }), attrs
-    | AliasDef (typ, _orig) -> return (EnumTypeDef { EnumTypeName = name; BaseType = typ; Cases = cases }), attrs
+    | AliasDef (typ, _orig) -> return! failFatally (sprintf "列挙型の定義(%s)の規定型に他の列定義(%s)を指定することはできません。" name typ.TypeName)
     | EnumTypeDef typ -> return! failFatally (sprintf "列挙型の定義(%s)の基底型に他の列挙型(%s)を指定することはできません。" name typ.EnumTypeName)
   }
 

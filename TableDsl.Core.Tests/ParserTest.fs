@@ -561,3 +561,19 @@ module ParserTest =
                     ]
                 }
             ]
+
+    [<Test>]
+    let ``alias def in the enum based def`` () =
+      """
+      coltype foo = int
+      coltype Platform =
+        | iOS = 1
+        | Android = 2
+      based { foo with default = 1 }
+      """
+      |> Parser.tryParse
+      |> Result.map (fst >> List.choose (function TableDef def -> Some def | _ -> None))
+      |> function
+         | Success res -> failwithf "oops... expected is failure but success : %A" res
+         | Failure (FParsecDefaultMessage err) -> failwithf "oops... : %s" err
+         | Failure (UserFriendlyMessages errs) -> errs |> List.map (fun (_, _, msg) -> msg) |> should equal ["列挙型の定義(Platform)の規定型に他の列定義(foo)を指定することはできません。"] 
