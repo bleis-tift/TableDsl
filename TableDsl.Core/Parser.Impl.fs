@@ -149,7 +149,7 @@ module internal Impl =
     return (AliasDef ({ TypeName = name; TypeParameters = typeParams }, body), attrs)
   }
 
-  let pEnumCase = attempt (pSkipOnelineToken "|") >>. pName .>> pSkipOnelineToken "=" .>>. pInteger
+  let pEnumCase = attempt (pSkipOnelineToken "|") >>. pName .>>. pJpNameOpt .>> pSkipOnelineToken "=" .>>. pInteger |>> fun ((n, j), v) -> (n, j, v)
   let pEnumCases = sepEndBy1 pEnumCase newline
   let pEnumTypeDef name typeParams = parse {
     let! cases = pEnumCases

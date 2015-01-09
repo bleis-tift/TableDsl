@@ -16,7 +16,8 @@ module internal ColTypeDef =
       | EnumTypeDef typ -> failwith "Not implemented yet"
 
   let printEnumCases cases =
-    cases |> List.map (fun (name, value) -> "  | " + name + " = " + string value) |> Str.join "\n"
+    let printJpName = function Some v -> "[" + v + "]" | None -> ""
+    cases |> List.map (fun (name, jpName, value) -> "  | " + name + printJpName jpName + " = " + string value) |> Str.join "\n"
 
   let printEnumTypeBody enumType attrs =
     let baseType = printNonEnumTypeName enumType.BaseType

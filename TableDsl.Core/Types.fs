@@ -46,7 +46,7 @@ with
 and EnumType = {
   EnumTypeName: string
   BaseType: NonEnumType
-  Cases: (string * int) list
+  Cases: (string * string option * int) list
 }
 with
   override this.ToString() = sprintf "%A" this
