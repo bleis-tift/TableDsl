@@ -1,7 +1,6 @@
 ﻿namespace TableDsl.Parser
 
 open FParsec
-open TableDsl
 open TableDsl.Parser.Types
 
 module internal Primitives =

@@ -79,7 +79,7 @@ module Printer =
   let printAttributeValue attrValueElems =
     let printAttrValueElem = function
     | Lit l -> l
-    | Var v -> "oops!"
+    | Var _v -> "oops!"
 
     attrValueElems |> List.map printAttrValueElem |> Str.concat
 
@@ -250,7 +250,7 @@ module Printer =
             "ALTER TABLE [" + tableDef.TableName + "] ADD CONSTRAINT [" + name + "] DEFAULT (" + value + ") FOR [" + col + "];"
        )
 
-  let printSummaryAndJpName tableDef =
+  let printSummaryAndJpName _tableDef =
     None
 
   let printSql elems =

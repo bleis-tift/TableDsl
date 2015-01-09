@@ -70,7 +70,7 @@ module internal Impl =
     let resolved =
       env |> List.tryFind (fun (name, paramCount, _, _, _, _) -> name = typeName && paramCount = (List.length typeParams)) 
     match resolved with
-    | Some (name, paramCount, t, attrs, colSummary, colJpName) ->
+    | Some (_name, _paramCount, t, attrs, colSummary, colJpName) ->
       let typeDef, attrs =
         match t with
         | BuiltinType ty -> (BuiltinType { ty with TypeParameters = typeParams }), attrs
@@ -151,13 +151,13 @@ module internal Impl =
 
   let pEnumCase = attempt (pSkipOnelineToken "|") >>. pName .>>. pJpNameOpt .>> pSkipOnelineToken "=" .>>. pInteger |>> fun ((n, j), v) -> (n, j, v)
   let pEnumCases = sepEndBy1 pEnumCase newline
-  let pEnumTypeDef name typeParams = parse {
+  let pEnumTypeDef name _typeParams = parse {
     let! cases = pEnumCases
     do! pSkipToken "based"
     let! based, attrs = pOpenTypeRef
     match based.ColumnTypeDef with
     | BuiltinType typ -> return (EnumTypeDef { EnumTypeName = name; BaseType = typ; Cases = cases }), attrs
-    | AliasDef (typ, orig) -> return (EnumTypeDef { EnumTypeName = name; BaseType = typ; Cases = cases }), attrs
+    | AliasDef (typ, _orig) -> return (EnumTypeDef { EnumTypeName = name; BaseType = typ; Cases = cases }), attrs
     | EnumTypeDef typ -> return! failFatally (sprintf "列挙型の定義(%s)の基底型に他の列挙型(%s)を指定することはできません。" name typ.EnumTypeName)
   }
 

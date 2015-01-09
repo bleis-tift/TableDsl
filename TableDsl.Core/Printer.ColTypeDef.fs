@@ -12,8 +12,8 @@ module internal ColTypeDef =
     " " +
       match col.ColumnTypeDef with
       | BuiltinType typ -> printAttributes (printNonEnumTypeName typ) attrs
-      | AliasDef (typ, originalType) -> printAttributes (printNonEnumTypeName typ) attrs
-      | EnumTypeDef typ -> failwith "Not implemented yet"
+      | AliasDef (typ, _originalType) -> printAttributes (printNonEnumTypeName typ) attrs
+      | EnumTypeDef _typ -> failwith "Not implemented yet"
 
   let printEnumCases cases =
     let printJpName = function Some v -> "[" + v + "]" | None -> ""

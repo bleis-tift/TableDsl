@@ -8,13 +8,13 @@ module TableDef =
   let rec printNonEnumTypeName (nonEnumType: NonEnumType) =
     match nonEnumType.TypeParameters with
     | [] -> nonEnumType.TypeName
-    | other -> nonEnumType.TypeName + (printOpenTypeParams (printColumnTypeDef []) nonEnumType.TypeParameters)
+    | _other -> nonEnumType.TypeName + (printOpenTypeParams (printColumnTypeDef []) nonEnumType.TypeParameters)
 
   and printColumnTypeDef attrs col =
     " " +
       match col.ColumnTypeDef with
       | BuiltinType typ -> printAttributes (printNonEnumTypeName typ) attrs
-      | AliasDef (typ, originalType) -> printAttributes (printNonEnumTypeName typ) attrs
+      | AliasDef (typ, _originalType) -> printAttributes (printNonEnumTypeName typ) attrs
       | EnumTypeDef typ -> printAttributes typ.EnumTypeName attrs
 
   let printColumnName = function
