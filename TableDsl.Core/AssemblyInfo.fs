@@ -2,6 +2,7 @@
 
 open System.Reflection
 open System.Runtime.InteropServices
+open System.Runtime.CompilerServices
 
 [<assembly: AssemblyTitle("TableDsl.Core")>]
 [<assembly: AssemblyProduct("TableDsl.Core")>]
@@ -9,5 +10,7 @@ open System.Runtime.InteropServices
 
 [<assembly: AssemblyVersion("1.1.0.0")>]
 [<assembly: AssemblyFileVersion("1.1.0.0")>]
+
+[<assembly: InternalsVisibleTo("TableDsl.Core.Tests")>]
 
 do ()
