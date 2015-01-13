@@ -207,7 +207,10 @@ module ParserTest =
       |> function
          | Success res -> failwithf "oops! Success! : %A" res
          | Failure (FParsecDefaultMessage err) -> failwithf "oops! : %s" err
-         | Failure (UserFriendlyMessages errs) -> errs |> List.map (fun (_, _, msg) -> msg) |> should equal ["列挙型の定義(Platform2)の基底型に他の列挙型(Platform)を指定することはできません。"]
+         | Failure (UserFriendlyMessages errs) -> 
+            errs 
+            |> List.map (fun (_, _, msg) -> msg) 
+            |> should equal ["列挙型の定義(Platform2)の基底型には組み込み型しか指定できませんが、他の列挙型(Platform)が指定されました。"]
 
   module TableDef =
     let nullable typ =
@@ -576,4 +579,7 @@ module ParserTest =
       |> function
          | Success res -> failwithf "oops... expected is failure but success : %A" res
          | Failure (FParsecDefaultMessage err) -> failwithf "oops... : %s" err
-         | Failure (UserFriendlyMessages errs) -> errs |> List.map (fun (_, _, msg) -> msg) |> should equal ["列挙型の定義(Platform)の規定型に他の列定義(foo)を指定することはできません。"] 
+         | Failure (UserFriendlyMessages errs) -> 
+            errs 
+            |> List.map (fun (_, _, msg) -> msg) 
+            |> should equal ["列挙型の定義(Platform)の基底型には組み込み型しか指定できませんが、列定義(foo)が指定されました。"] 
