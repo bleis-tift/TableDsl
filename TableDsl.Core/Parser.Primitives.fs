@@ -27,13 +27,43 @@ module internal Primitives =
 
   let pTypeVariableName: Parser<_> = regex "@[a-zA-Z0-9_]+"
 
-  // TODO : '文字列'や4.2に対応すること
+  module private SqlParsers =
+    let pSqlExpr, pSqlExprRef = createParserForwardedToRef ()
+    let pSqlNum: Parser<_> =
+      regex @"-?[0-9]+(\.[0-9]*)?"
+      <??> "sql number"
+    let pSqlString: Parser<_> =
+      parse {
+        let! startSqlStr = regex "N?'"
+        let! sqlStr =
+          ((parse { let! ch = noneOf "'" in return string ch })
+            <|> 
+            pstring "''") |> many |>> String.concat ""
+        let! endSqlStr = regex "'"
+        return startSqlStr + sqlStr + endSqlStr
+      }
+      <??> "sql string"
+    let pFunctionCall: Parser<_> =
+      regex @"[a-zA-Z_][a-zA-Z0-9_]*"
+      .>>. between (pstring "(") (pstring ")") (sepBy pSqlExpr (pchar ',' .>> opt (pchar ' ' |> many)))
+      |>> fun (name, args) -> name + "(" + String.concat ", " args + ")"
+      <??> "sql function call"
+    let pSqlIdent: Parser<_> =
+      regex @"[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*"
+      <??> "sql ident"
+
+    do pSqlExprRef := choice [ pSqlNum; attempt pSqlString; attempt pFunctionCall; pSqlIdent ]
+
+  // TODO : SQLの値に対応する
   // 対応しなければならないもの
-  // * 関数呼び出し ex) NEWID(), f(x, y)
   // * 演算 ex) 1 + 2
   // * キャスト ex) cast(value as type)
-  // * 値 ex) 42.1, N'hoge', 'hogehoge', 0x, 0x42
+  // * 値 ex) 0x42
   // * 優先順位のカッコ ex) (1 + 2) * 3
   // * CASE式(優先度低)
   // * サブクエリ(優先度低)
-  let pSqlValue: Parser<_> = regex @"[a-zA-Z0-9_.]+(\([a-zA-Z0-9_., ]*\))?"
+  let pSqlValue: Parser<_> = SqlParsers.pSqlExpr
+
+  let pIndexSetting: Parser<_> = sepBy1 (regex @"[a-zA-Z0-9_]+") (pchar '.') |>> String.concat "."
+
+  let pPlaceholders: Parser<_> = regex @"[a-zA-Z0-9_.]+(\([a-zA-Z0-9_., ]*\))?"

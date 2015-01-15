@@ -16,6 +16,12 @@ module Parser =
     let pSummary = pSummary
     let pNonQuotedTypeParamElem = pNonQuotedTypeParamElem
 
+  // HACK: 外のアセンブリからTableDsl.Parser名前空間のPrimitivesモジュールが見えないので、
+  //       それを回避するためにParserモジュールにもPrimitivesモジュールを作り、
+  //       こちら経由でアクセスするようにする
+  module internal Primitives =
+    let pSqlValue = pSqlValue
+
   type Position = {
     Line: int64
     Column: int64
@@ -53,7 +59,10 @@ module Parser =
         if msg.Tail <> null then
           yield! collectMessages' pos state msg.Tail
       ]
-    collectMessages' pos state msg
+    if msg = null then
+      []
+    else
+      collectMessages' pos state msg
 
   let tryParse' parser (input: string) =
     let err2err (err: ParserError) =

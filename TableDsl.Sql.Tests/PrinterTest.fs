@@ -37,6 +37,8 @@ module PrinterTest =
     Input: string
     Expected: string
   }
+  with
+    override this.ToString() = sprintf "%A" this
 
   let source =
     [

@@ -53,6 +53,7 @@
   <ItemGroup>
     <Content Include="packages.config" />
     <Content Include="app.config" />
+    <Compile Include="SqlExprParserTest.fs" />
     <Compile Include="Parser.Impl.Test.fs" />
     <Compile Include="ParserTest.fs" />
     <Compile Include="PrinterTest.fs" />

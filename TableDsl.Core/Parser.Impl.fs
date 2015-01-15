@@ -100,15 +100,20 @@ module internal Impl =
 
   pOpenTypeRefWithoutAttributesRef := pClosedTypeRefWithoutAttributes
 
+  let pAttributeValue =
+    (attempt (pSqlValue .>> followedBy (pchar ';' <|> pchar ' ' <|> newline)))
+    <|> (attempt pIndexSetting)
+    <|> pPlaceholders
+
   let pClosedComplexAttribute = parse {
     do! wsnl |>> ignore
     let! name = pName
     do! pSkipToken "="
-    let! value = pSqlValue
+    let! value = pAttributeValue
     return ComplexColAttr (name, [ Lit value ])
   }
   let pVarAttrValueElem = pTypeVariableName |>> Var
-  let pLitAttrValueElem = pSqlValue |>> Lit
+  let pLitAttrValueElem = pAttributeValue |>> Lit
   let pAttributeValueElem = pVarAttrValueElem <|> pLitAttrValueElem
   let pOpenComplexAttribute = parse {
     do! wsnl |>> ignore
