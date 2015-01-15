@@ -57,6 +57,7 @@
     <Compile Include="Parser.Impl.Test.fs" />
     <Compile Include="ParserTest.fs" />
     <Compile Include="PrinterTest.fs" />
+    <Compile Include="InvalidPrograms.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Basis.Core">

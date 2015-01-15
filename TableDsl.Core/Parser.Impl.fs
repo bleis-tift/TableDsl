@@ -98,7 +98,18 @@ module internal Impl =
     return typ
   }
 
-  pOpenTypeRefWithoutAttributesRef := pClosedTypeRefWithoutAttributes
+  pOpenTypeRefWithoutAttributesRef := parse {
+    let! closedTypeRef = pClosedTypeRefWithoutAttributes
+    match closedTypeRef.ColumnTypeDef with
+    | AliasDef (_, orig) ->
+        match orig.ColumnTypeDef with
+        | BuiltinType info when info.TypeName = "nullable" ->
+            return! failFatally "nullableを元に型を定義することは出来ません。"
+        | _ ->
+            return closedTypeRef
+    | _ ->
+        return closedTypeRef
+  }
 
   let pAttributeValue =
     (attempt (pSqlValue .>> followedBy (pchar ';' <|> pchar ' ' <|> newline)))
@@ -140,10 +151,14 @@ module internal Impl =
   let pOpenTypeRefWithAttributes = parse {
     do! pSkipOnelineToken "{"
     let! typ = pOpenTypeRefWithoutAttributes
-    do! pSkipToken "with"
-    let! attrs = pOpenAttributes
-    do! pSkipOnelineToken "}"
-    return (typ, attrs)
+    match typ.ColumnTypeDef with
+    | BuiltinType info when info.TypeName = "nullable" ->
+        return! failFatally "nullableを元に型を定義することは出来ません。"
+    | _ ->
+        do! pSkipToken "with"
+        let! attrs = pOpenAttributes
+        do! pSkipOnelineToken "}"
+        return (typ, attrs)
   }
 
   let pClosedTypeRef = pClosedTypeRefWithAttributes <|> (pClosedTypeRefWithoutAttributes |>> fun t -> (t, []))
