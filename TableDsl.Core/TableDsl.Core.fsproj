@@ -65,6 +65,7 @@
     <Compile Include="Printer.fs" />
     <Compile Include="PrinterPluginUtil.fs" />
     <Compile Include="RuleChecker.fs" />
+    <Compile Include="RuleCheckerPlugins.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Basis.Core">

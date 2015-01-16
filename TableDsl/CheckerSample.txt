@@ -1,0 +1,3 @@
+﻿table User = {
+  UserId: int
+}

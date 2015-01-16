@@ -45,7 +45,7 @@ let getPrinterFunction (typ: Type) =
 
 let getRuleCheckerFunction (attr: TableDsl.RuleCheckerPluginAttribute) (typ: Type) =
   let f (m: MethodInfo) (elems: TableDsl.Element list) =
-    m.Invoke(null, [| attr.Arg; elems |]) :?> TableDsl.CheckResult list
+    m.Invoke(null, [| attr.DefaultLevel; attr.Arg; elems |]) :?> TableDsl.CheckResult list
 
   f (typ.GetMethod("check"))
 
@@ -54,6 +54,7 @@ let tryLoadPlugin f =
     for dll in Directory.GetFiles("plugins", "*.dll") do
       let asm = Assembly.LoadFrom(dll)
       for typ in asm.GetTypes() -> typ
+    yield! Type.GetType("TableDsl.ParserModule,TableDsl.Core").Assembly.GetTypes()
   }
   |> Seq.tryPick (fun typ ->
        let attrs = typ.GetCustomAttributes(true)
@@ -66,28 +67,21 @@ let print targetFile options =
       let input = File.ReadAllText(targetFile, Encoding.UTF8)
       let elems = TableDsl.Parser.parse input
       let format = format.ToLower()
-      if format = "tabledsl" then
-        let printed = TableDsl.Printer.print elems
-        match options |> Map.tryFind "output" with
-        | Some output ->
-            File.WriteAllText(output, printed, Encoding.UTF8)
-        | None ->
-            printfn "%s" printed
-      else
-        match tryLoadPlugin (fun typ ->
-            function
-            | :? TableDsl.PrinterPluginAttribute as attr when attr.Name.ToLower() = format -> Some (getPrinterFunction typ)
-            | _ -> None) with
-        | Some printer ->
-            let output = options |> Map.tryFind "output"
-            printer (output, options, elems)
-        | None -> failwithf "printer(%s) is not found." format
+      match tryLoadPlugin (fun typ ->
+          function
+          | :? TableDsl.PrinterPluginAttribute as attr when attr.Name.ToLower() = format -> Some (getPrinterFunction typ)
+          | _ -> None) with
+      | Some printer ->
+          let output = options |> Map.tryFind "output"
+          printer (output, options, elems)
+      | None -> failwithf "printer(%s) is not found." format
   | None ->
       failwith "print subcommand needs format option."
 
 let parseRuleLine (line: string) =
   match line.Split([|':'|], 3) with
   | [| name |] -> (name, None, None)
+  | [| name; TableDsl.RuleLevelPatterns.RuleLevel level |] -> (name, Some level, None)
   | [| name; TableDsl.RuleLevelPatterns.RuleLevel level; arg |] -> (name, Some level, Some arg)
   | [| name; arg |] -> (name, None, Some arg)
   | [| name; arg; argRest |] ->
@@ -102,19 +96,23 @@ let check targetFile options =
 
       let tryLoadRuleChecker line =
         let name, level, arg = parseRuleLine line
-        tryLoadPlugin (fun typ ->
-          function
-          | :? TableDsl.RuleCheckerPluginAttribute as attr when attr.Name.ToLower() = name ->
-              level |> Option.iter (fun l -> attr.Level <- l)
-              arg |> Option.iter (fun a -> attr.Arg <- a)
-              Some (getRuleCheckerFunction attr typ)
-          | _ -> None)
+        let plugin =
+          tryLoadPlugin (fun typ ->
+            function
+            | :? TableDsl.RuleCheckerPluginAttribute as attr when attr.Name.ToLower() = name ->
+                level |> Option.iter (fun l -> attr.DefaultLevel <- l)
+                arg |> Option.iter (fun a -> attr.Arg <- a)
+                Some (getRuleCheckerFunction attr typ)
+            | _ -> None)
+        match plugin with
+        | None -> failwithf "RuleChecker not found: %s" name
+        | _ -> plugin
 
-      let rules =
+      let checkers =
         File.ReadAllLines(ruleFile)
         |> Array.choose tryLoadRuleChecker
       let results =
-        rules |> Seq.collect (fun rule -> rule elems)
+        checkers |> Seq.collect (fun check -> check elems)
 
       do
         results
@@ -122,11 +120,12 @@ let check targetFile options =
 
       let detected = Seq.length results
       let counts = results |> Seq.countBy (fun r -> r.Level)
-      let fatals = defaultArg (counts |> Seq.tryPick (function (TableDsl.Fatal, x) -> Some x | _ -> None)) 0
-      let warnings = defaultArg (counts |> Seq.tryPick (function (TableDsl.Warning, x) -> Some x | _ -> None)) 0
-      let suggestions = defaultArg (counts |> Seq.tryPick (function (TableDsl.Suggestion, x) -> Some x | _ -> None)) 0
+      let fatals = defaultArg (counts |> Seq.tryPick (function (TableDsl.RuleLevel.Fatal, x) -> Some x | _ -> None)) 0
+      let warnings = defaultArg (counts |> Seq.tryPick (function (TableDsl.RuleLevel.Warning, x) -> Some x | _ -> None)) 0
+      let suggestions = defaultArg (counts |> Seq.tryPick (function (TableDsl.RuleLevel.Suggestion, x) -> Some x | _ -> None)) 0
       printfn "==========================================================================="
-      printfn "detected: %d, fatals: %d, warnings: %d, suggestions: %d" detected fatals warnings suggestions
+      printfn "fatals: %d, warnings: %d, suggestions: %d" fatals warnings suggestions
+      printfn "total: %d" detected
       fatals 
   | None ->
       failwith "check subcommand needs rule option."
