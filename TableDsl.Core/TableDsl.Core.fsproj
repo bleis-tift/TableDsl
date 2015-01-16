@@ -64,6 +64,7 @@
     <Compile Include="Printer.TableDef.fs" />
     <Compile Include="Printer.fs" />
     <Compile Include="PrinterPluginUtil.fs" />
+    <Compile Include="RuleChecker.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Basis.Core">

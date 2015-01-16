@@ -5,6 +5,7 @@ open System.Reflection
 
 type SubCommandType =
   | Print
+  | Check
 
 type Args = {
   SubCommandType: SubCommandType
@@ -32,11 +33,9 @@ let parse argv =
 
   match argv with
   | "print"::argv -> parse' { SubCommandType = Print; TargetFile = ""; Options = Map.empty } argv
+  | "check"::argv -> parse' { SubCommandType = Check; TargetFile = ""; Options = Map.empty } argv
   | other::_ -> failwithf "unknown subcommand: %s" other
   | [] -> failwith "please input subcommand."
-
-type Plugin =
-  | PrinterPlugin of (string option * Map<string, string> * TableDsl.Element list -> unit)
 
 let getPrinterFunction (typ: Type) =
   let f (m: MethodInfo) (output: string option, options: Map<string, string>, elems: TableDsl.Element list) =
@@ -44,7 +43,13 @@ let getPrinterFunction (typ: Type) =
 
   f (typ.GetMethod("print"))
 
-let tryLoadPlugin pred =
+let getRuleCheckerFunction (attr: TableDsl.RuleCheckerPluginAttribute) (typ: Type) =
+  let f (m: MethodInfo) (elems: TableDsl.Element list) =
+    m.Invoke(null, [| attr.Arg; elems |]) :?> TableDsl.CheckResult list
+
+  f (typ.GetMethod("check"))
+
+let tryLoadPlugin f =
   seq {
     for dll in Directory.GetFiles("plugins", "*.dll") do
       let asm = Assembly.LoadFrom(dll)
@@ -52,10 +57,7 @@ let tryLoadPlugin pred =
   }
   |> Seq.tryPick (fun typ ->
        let attrs = typ.GetCustomAttributes(true)
-       if attrs |> Array.exists pred then
-         Some (PrinterPlugin (getPrinterFunction typ))
-       else
-         None
+       attrs |> Array.tryPick (f typ)
      )
 
 let print targetFile options =
@@ -72,22 +74,70 @@ let print targetFile options =
         | None ->
             printfn "%s" printed
       else
-        match tryLoadPlugin (function :? TableDsl.PrinterPluginAttribute as attr -> attr.Name.ToLower() = format | _ -> false) with
-        | Some (PrinterPlugin printer) ->
+        match tryLoadPlugin (fun typ ->
+            function
+            | :? TableDsl.PrinterPluginAttribute as attr when attr.Name.ToLower() = format -> Some (getPrinterFunction typ)
+            | _ -> None) with
+        | Some printer ->
             let output = options |> Map.tryFind "output"
             printer (output, options, elems)
         | None -> failwithf "printer(%s) is not found." format
   | None ->
       failwith "print subcommand needs format option."
 
+let parseRuleLine (line: string) =
+  match line.Split([|':'|], 3) with
+  | [| name |] -> (name, None, None)
+  | [| name; TableDsl.RuleLevelPatterns.RuleLevel level; arg |] -> (name, Some level, Some arg)
+  | [| name; arg |] -> (name, None, Some arg)
+  | [| name; arg; argRest |] ->
+      let arg = arg + ":" + argRest
+      (name, None, Some arg)
+
+let check targetFile options =
+  match options |> Map.tryFind "rule" with
+  | Some (ruleFile: string) ->
+      let input = File.ReadAllText(targetFile, Encoding.UTF8)
+      let elems = TableDsl.Parser.parse input
+
+      let tryLoadRuleChecker line =
+        let name, level, arg = parseRuleLine line
+        tryLoadPlugin (fun typ ->
+          function
+          | :? TableDsl.RuleCheckerPluginAttribute as attr when attr.Name.ToLower() = name ->
+              level |> Option.iter (fun l -> attr.Level <- l)
+              arg |> Option.iter (fun a -> attr.Arg <- a)
+              Some (getRuleCheckerFunction attr typ)
+          | _ -> None)
+
+      let rules =
+        File.ReadAllLines(ruleFile)
+        |> Array.choose tryLoadRuleChecker
+      let results =
+        rules |> Seq.collect (fun rule -> rule elems)
+
+      do
+        results
+        |> Seq.iter (fun res -> printfn "%s" (string res))
+
+      let detected = Seq.length results
+      let counts = results |> Seq.countBy (fun r -> r.Level)
+      let fatals = defaultArg (counts |> Seq.tryPick (function (TableDsl.Fatal, x) -> Some x | _ -> None)) 0
+      let warnings = defaultArg (counts |> Seq.tryPick (function (TableDsl.Warning, x) -> Some x | _ -> None)) 0
+      let suggestions = defaultArg (counts |> Seq.tryPick (function (TableDsl.Suggestion, x) -> Some x | _ -> None)) 0
+      printfn "==========================================================================="
+      printfn "detected: %d, fatals: %d, warnings: %d, suggestions: %d" detected fatals warnings suggestions
+      fatals 
+  | None ->
+      failwith "check subcommand needs rule option."
+
 [<EntryPoint>]
 let main argv =
   try
     let args = parse (List.ofArray argv)
     match args.SubCommandType with
-    | Print ->
-        print args.TargetFile args.Options
-    0
+    | Print -> print args.TargetFile args.Options; 0
+    | Check -> check args.TargetFile args.Options
   with
     e ->
       eprintfn "%s" e.Message
