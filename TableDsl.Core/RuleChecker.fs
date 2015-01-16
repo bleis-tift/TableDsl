@@ -10,14 +10,15 @@ module RuleLevelPatterns =
     | "fatal" -> Some RuleLevel.Fatal
     | _ -> None
 
-type RuleCheckerPluginAttribute (name: string, level: RuleLevel) =
+type RuleCheckerPluginAttribute (name: string, level: RuleLevel, description: string) =
   inherit System.Attribute()
 
   member __.Name = name
   member val DefaultLevel = level with get, set
+  member __.Description = description
   member val Arg = "" with get, set
 
-type CheckResult = {
+type DetectedItem = {
   Level: RuleLevel
   Message: string
 }

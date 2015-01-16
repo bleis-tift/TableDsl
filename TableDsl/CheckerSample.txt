@@ -1,3 +1,7 @@
 ﻿table User = {
   UserId: int
 }
+
+table snake_case_tables = {
+  snake_case_column: int
+}

@@ -45,7 +45,7 @@ let getPrinterFunction (typ: Type) =
 
 let getRuleCheckerFunction (attr: TableDsl.RuleCheckerPluginAttribute) (typ: Type) =
   let f (m: MethodInfo) (elems: TableDsl.Element list) =
-    m.Invoke(null, [| attr.DefaultLevel; attr.Arg; elems |]) :?> TableDsl.CheckResult list
+    m.Invoke(null, [| attr.DefaultLevel; attr.Arg; elems |]) :?> TableDsl.DetectedItem list
 
   f (typ.GetMethod("check"))
 
@@ -88,6 +88,11 @@ let parseRuleLine (line: string) =
       let arg = arg + ":" + argRest
       (name, None, Some arg)
 
+type CheckResult = {
+  Name: string
+  DetectedItems: TableDsl.DetectedItem list
+}
+
 let check targetFile options =
   match options |> Map.tryFind "rule" with
   | Some (ruleFile: string) ->
@@ -102,7 +107,7 @@ let check targetFile options =
             | :? TableDsl.RuleCheckerPluginAttribute as attr when attr.Name.ToLower() = name ->
                 level |> Option.iter (fun l -> attr.DefaultLevel <- l)
                 arg |> Option.iter (fun a -> attr.Arg <- a)
-                Some (getRuleCheckerFunction attr typ)
+                Some (getRuleCheckerFunction attr typ >> (fun xs -> { Name = attr.Name; DetectedItems = xs }))
             | _ -> None)
         match plugin with
         | None -> failwithf "RuleChecker not found: %s" name
@@ -112,20 +117,23 @@ let check targetFile options =
         File.ReadAllLines(ruleFile)
         |> Array.choose tryLoadRuleChecker
       let results =
-        checkers |> Seq.collect (fun check -> check elems)
+        checkers |> Seq.map (fun check -> check elems)
 
       do
         results
-        |> Seq.iter (fun res -> printfn "%s" (string res))
+        |> Seq.iter (fun res ->
+            printfn "rule: %s" res.Name
+            printfn "------%s" (String.replicate res.Name.Length "-")
+            res.DetectedItems |> Seq.iter (string >> printfn "%s")
+            printfn "")
 
-      let detected = Seq.length results
-      let counts = results |> Seq.countBy (fun r -> r.Level)
+      let counts = results |> Seq.collect (fun r -> r.DetectedItems) |> Seq.countBy (fun r -> r.Level)
       let fatals = defaultArg (counts |> Seq.tryPick (function (TableDsl.RuleLevel.Fatal, x) -> Some x | _ -> None)) 0
       let warnings = defaultArg (counts |> Seq.tryPick (function (TableDsl.RuleLevel.Warning, x) -> Some x | _ -> None)) 0
       let suggestions = defaultArg (counts |> Seq.tryPick (function (TableDsl.RuleLevel.Suggestion, x) -> Some x | _ -> None)) 0
       printfn "==========================================================================="
       printfn "fatals: %d, warnings: %d, suggestions: %d" fatals warnings suggestions
-      printfn "total: %d" detected
+      printfn "total: %d" (fatals + warnings + suggestions)
       fatals 
   | None ->
       failwith "check subcommand needs rule option."
