@@ -1,6 +1,7 @@
 ﻿namespace TableDsl.RuleCheckerPlugins
 
 open TableDsl
+open System
 open System.Text.RegularExpressions
 open Basis.Core
 
@@ -41,38 +42,35 @@ module TableNameS =
     |> Seq.choose (singularName level (arg.Split(',') |> Array.map Str.trim))
     |> Seq.toList
 
+module private Util =
+  let names (elems: Element list) =
+    elems
+    |> Seq.collect (function
+                    | TableDef t -> seq { yield ("テーブル名", t.TableName)
+                                          yield! t.ColumnDefs
+                                                 |> Seq.map (fun cd -> match cd.ColumnName with
+                                                                       | Wildcard -> ("列名", cd.ColumnType.ColumnTypeRefName)
+                                                                       | ColumnName (n, _) -> ("列名", n)) }
+                    | _ -> Seq.empty)
+
+  let check level _arg format pred elems  =
+    let names = names elems
+    names
+    |> Seq.filter (snd >> pred)
+    |> Seq.map (fun (kind, n) -> { Level = level; Message = sprintf format kind n })
+    |> Seq.toList
+
 [<RuleCheckerPlugin("snake-case", RuleLevel.Warning, "")>]
 module SnakeCase =
   let check (level: RuleLevel) (_arg: string) (elems: Element list) : DetectedItem list =
-    let names =
-      elems
-      |> Seq.collect (function
-                      | TableDef t -> seq { yield ("テーブル名", t.TableName)
-                                            yield! t.ColumnDefs
-                                                   |> Seq.map (fun cd -> match cd.ColumnName with
-                                                                         | Wildcard -> ("列名", cd.ColumnType.ColumnTypeRefName)
-                                                                         | ColumnName (n, _) -> ("列名", n)) }
-                      | _ -> Seq.empty)
-    names
-    |> Seq.filter (snd >> Str.contains "_")
-    |> Seq.map (fun (kind, n) -> { Level = level; Message = sprintf "%sにスネークケースが使われています: %s" kind n })
-    |> Seq.toList
+    Util.check level _arg "%sにスネークケースが使われています: %s" (Str.contains "_") elems
 
 [<RuleCheckerPlugin("upper-case", RuleLevel.Warning, "")>]
 module UpperCase =
-  open System
-
   let check (level: RuleLevel) (_arg: string) (elems: Element list) : DetectedItem list =
-    let names =
-      elems
-      |> Seq.collect (function
-                      | TableDef t -> seq { yield ("テーブル名", t.TableName)
-                                            yield! t.ColumnDefs
-                                                   |> Seq.map (fun cd -> match cd.ColumnName with
-                                                                         | Wildcard -> ("列名", cd.ColumnType.ColumnTypeRefName)
-                                                                         | ColumnName (n, _) -> ("列名", n)) }
-                      | _ -> Seq.empty)
-    names
-    |> Seq.filter (snd >> Str.forall Char.IsUpper)
-    |> Seq.map (fun (kind, n) -> { Level = level; Message = sprintf "%sにスネークケースが使われています: %s" kind n })
-    |> Seq.toList
+    Util.check level _arg "大文字のみの%sがあります: %s" (Str.forall Char.IsUpper) elems
+
+[<RuleCheckerPlugin("lower-case", RuleLevel.Warning, "")>]
+module LowerCase =
+  let check (level: RuleLevel) (_arg: string) (elems: Element list) : DetectedItem list =
+    Util.check level _arg "小文字のみの%sがあります: %s" (Str.forall Char.IsLower) elems
