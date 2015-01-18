@@ -30,7 +30,7 @@ module TableNameS =
     else false
 
   let singularName level excludes name =
-    if name |> Str.endsWith "s" then None
+    if name |> Str.toLower |> Str.endsWith "s" then None
     elif specialRules name then None
     elif excludes |> Array.exists ((=)name) then None
     else Some { Level = level; Message = sprintf "テーブル名に単数形が使われています: %s" name }
