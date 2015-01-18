@@ -63,7 +63,6 @@
     <Compile Include="Printer.ColTypeDef.fs" />
     <Compile Include="Printer.TableDef.fs" />
     <Compile Include="Printer.fs" />
-    <Compile Include="PrinterPluginUtil.fs" />
     <Compile Include="RuleChecker.fs" />
     <Compile Include="RuleCheckerPlugins.fs" />
   </ItemGroup>

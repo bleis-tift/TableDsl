@@ -1,7 +1,6 @@
 ﻿namespace TableDsl.Excel
 
 open TableDsl
-open TableDsl.PrinterPluginUtil
 
 open System.IO
 open OfficeOpenXml

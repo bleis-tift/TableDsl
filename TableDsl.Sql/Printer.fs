@@ -2,7 +2,6 @@
 
 open Basis.Core
 open TableDsl
-open TableDsl.PrinterPluginUtil
 
 type AList<'TKey, 'TValue> = ('TKey * 'TValue) list
 
