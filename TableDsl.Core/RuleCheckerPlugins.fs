@@ -49,9 +49,9 @@ module SnakeCase =
       |> Seq.collect (function
                       | TableDef t -> seq { yield ("テーブル名", t.TableName)
                                             yield! t.ColumnDefs
-                                                   |> Seq.choose (fun cd -> match cd.ColumnName with
-                                                                            | Wildcard -> None // TODO : ちゃんととってくる(Seq.chooseじゃなくて、Seq.mapになるはず)
-                                                                            | ColumnName (n, _) -> Some ("列名", n)) }
+                                                   |> Seq.map (fun cd -> match cd.ColumnName with
+                                                                         | Wildcard -> ("列名", cd.ColumnType.ColumnTypeRefName)
+                                                                         | ColumnName (n, _) -> ("列名", n)) }
                       | _ -> Seq.empty)
     names
     |> Seq.filter (snd >> Str.contains "_")
