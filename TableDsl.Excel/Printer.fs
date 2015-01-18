@@ -49,7 +49,7 @@ module Printer =
   let indexNo = ref 1
 
   let writeIndex (sheet: ExcelWorksheet) (table: TableDef) (colDef: ColumnDef) = function
-  | "PK", _col ->
+  | "PK", [_col] ->
       let row = !indexNo + 29
       sheet |> setNum 1 ("A", row) !indexNo
       sheet |> setString 1 ("C", row) ("PK_" + table.TableName)
@@ -57,7 +57,7 @@ module Printer =
       sheet |> setString 1 ("S", row) "○"
       sheet |> setString 1 ("AF", row) "-"
       incr indexNo
-  | "FK", fkCols ->
+  | "FK", [fkCols] ->
       let row = !indexNo + 29
       sheet |> setNum 1 ("A", row) !indexNo
       sheet |> setString 1 ("C", row) ("FK_" + table.TableName)
@@ -72,22 +72,23 @@ module Printer =
     let no = i + 1
     let row = i + 8
 
-    let colTypeDef, attrs = colDef.ColumnType
-    match ColumnTypeDef.tryToTypeName attrs colTypeDef with
-    | Success typeName ->
-        sheet |> setNum 1 ("A", row) no
-        sheet |> setString 1 ("C", row) (match colDef.ColumnName with Wildcard -> (* todo *) "not implemented" | ColumnName (name, _) -> name)
-        sheet |> setString 1 ("K", row) (match colDef.ColumnName with Wildcard -> (* todo *) "not implemented" | ColumnName (_, Some name) -> name | _ -> "-")
-        sheet |> setString 1 ("S", row) typeName.TypeName
-        sheet |> setString 1 ("X", row) (if typeName.Nullable then "■" else "□")
-        sheet |> setString 1 ("AA", row) (match typeName.Attributes |> List.tryFind (fst >> (=)"default") with Some (_, v) -> v | None -> "-")
-        sheet |> setString 1 ("AF", row) (match colDef.ColumnSummary with Some summary -> summary | None -> "-")
-
-        let attrs = typeName.Attributes
-        attrs
-        |> List.iter (writeIndex sheet table colDef)
-    | Failure f ->
-        failwith (ConvertError.toStr f)
+    let colTypeRef = colDef.ColumnType
+    let attrs = colTypeRef.AllAttrbutes |> Seq.map (function SimpleAttr k -> (k, []) | ComplexAttr (k, v) -> (k, v))
+    sheet |> setNum 1 ("A", row) no
+    sheet |> setString 1 ("C", row) (match colDef.ColumnName with Wildcard -> colTypeRef.ColumnTypeRefName | ColumnName (name, _) -> name)
+    sheet |> setString 1 ("K", row) (match colDef.ColumnName with
+                                     | Wildcard -> defaultArg colTypeRef.Type.ColumnType.ColumnTypeJpName "-"
+                                     | ColumnName (_, name) -> defaultArg name "-")
+    sheet |> setString 1 ("S", row) colTypeRef.Type.ColumnType.RootType
+    sheet |> setString 1 ("X", row) (if colTypeRef.IsNullable then "■" else "□")
+    sheet |> setString 1 ("AA", row) (match (attrs |> Seq.tryFind (fst >> (=)"default")) with
+                                      | Some (_, [v]) -> v
+                                      | _ -> "-")
+    sheet |> setString 1 ("AF", row) (match colDef.ColumnSummary with
+                                      | Some summary -> summary
+                                      | None -> defaultArg colTypeRef.Type.ColumnType.ColumnTypeSummary "-")
+    attrs
+    |> Seq.iter (writeIndex sheet table colDef)
 
   let write (package: ExcelPackage) (table: TableDef) =
     indexNo := 1

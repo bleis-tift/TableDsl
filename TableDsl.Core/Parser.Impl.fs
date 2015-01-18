@@ -28,7 +28,7 @@ module internal Impl =
 
   let pNullableParam = parse {
     do! pSkipOnelineToken "("
-    let! typ = pOpenTypeRefWithoutAttributes
+    let! typ, _ = pOpenTypeRefWithoutAttributes
     do! pSkipOnelineToken ")"
     return [BoundType typ]
   }
@@ -64,7 +64,7 @@ module internal Impl =
 
   and replaceTypeParams replacingMap colTypeDef =
     { colTypeDef with ColumnTypeDef = replaceTypeParams' replacingMap colTypeDef.ColumnTypeDef
-                      ColumnAttributes = colTypeDef.ColumnAttributes |> List.map (expandAttr replacingMap) }
+                      ColumnTypeDefAttributes = colTypeDef.ColumnTypeDefAttributes |> List.map (expandAttr replacingMap) }
 
   let resolveType typeName typeParams env =
     let resolved =
@@ -83,7 +83,7 @@ module internal Impl =
             let attrs = attrs |> List.map (expandAttr replacingMap)
             (AliasDef ({ ty with TypeParameters = typeParams }, replaceTypeParams replacingMap originalType)), attrs
         | EnumTypeDef ty -> (EnumTypeDef ty), attrs
-      preturn { ColumnSummary = colSummary; ColumnTypeDef = typeDef; ColumnJpName = colJpName; ColumnAttributes = attrs }
+      preturn { ColumnTypeDefSummary = colSummary; ColumnTypeDef = typeDef; ColumnTypeDefJpName = colJpName; ColumnTypeDefAttributes = attrs }
     | None -> failFatally (sprintf "%sという型が見つかりませんでした。" typeName)
 
   let pClosedTypeRefWithoutAttributes = parse {
@@ -94,21 +94,21 @@ module internal Impl =
       | None -> []
       | Some x -> x
     let! env = getUserState
-    let! typ = resolveType typeName typeParams env
-    return typ
+    if typeName = "nullable" then
+      match typeParams with
+      | [BoundType t] -> return (t, true)
+      | other -> return! failFatally (sprintf "nullableには一つしか型パラメータを指定できません。: %A" other)
+    else
+      let! typ = resolveType typeName typeParams env
+      return (typ, false)
   }
 
   pOpenTypeRefWithoutAttributesRef := parse {
-    let! closedTypeRef = pClosedTypeRefWithoutAttributes
-    match closedTypeRef.ColumnTypeDef with
-    | AliasDef (_, orig) ->
-        match orig.ColumnTypeDef with
-        | BuiltinType info when info.TypeName = "nullable" ->
-            return! failFatally "nullableを元に型を定義することは出来ません。"
-        | _ ->
-            return closedTypeRef
-    | _ ->
-        return closedTypeRef
+    let! (closedTypeRef, nullable) = pClosedTypeRefWithoutAttributes
+    if nullable then
+      return! failFatally "nullableを元に型を定義することは出来ません。"
+    else
+      return (closedTypeRef, nullable)
   }
 
   let pAttributeValue =
@@ -141,31 +141,45 @@ module internal Impl =
 
   let pClosedTypeRefWithAttributes = parse {
     do! pSkipOnelineToken "{"
-    let! typ = pClosedTypeRefWithoutAttributes
+    let! typ, nullable = pClosedTypeRefWithoutAttributes
     do! pSkipToken "with"
     let! attrs = pClosedAttributes
     do! pSkipOnelineToken "}"
-    return (typ, attrs)
+    return (typ, nullable, attrs)
   }
 
   let pOpenTypeRefWithAttributes = parse {
     do! pSkipOnelineToken "{"
-    let! typ = pOpenTypeRefWithoutAttributes
-    match typ.ColumnTypeDef with
-    | BuiltinType info when info.TypeName = "nullable" ->
-        return! failFatally "nullableを元に型を定義することは出来ません。"
-    | _ ->
-        do! pSkipToken "with"
-        let! attrs = pOpenAttributes
-        do! pSkipOnelineToken "}"
-        return (typ, attrs)
+    let! typ, nullable = pOpenTypeRefWithoutAttributes
+    if nullable then
+      return! failFatally "nullableを元に型を定義することは出来ません。"
+    else
+      do! pSkipToken "with"
+      let! attrs = pOpenAttributes
+      do! pSkipOnelineToken "}"
+      return (typ, nullable, attrs)
   }
 
-  let pClosedTypeRef = pClosedTypeRefWithAttributes <|> (pClosedTypeRefWithoutAttributes |>> fun t -> (t, []))
-  let pOpenTypeRef = pOpenTypeRefWithAttributes <|> (pOpenTypeRefWithoutAttributes |>> fun t -> (t, []))
+  let pOpenTypeRef = pOpenTypeRefWithAttributes <|> (pOpenTypeRefWithoutAttributes |>> fun (t, n) -> (t, n, []))
+  let pClosedTypeRef = parse {
+    let! typeDef, nullable, attrs =
+      pClosedTypeRefWithAttributes <|> (pClosedTypeRefWithoutAttributes |>> fun (t, n) -> (t, n, []))
+    let attrs =
+      attrs
+      |> List.map (function
+                   | SimpleColAttr k -> SimpleAttr k
+                   | ComplexColAttr (k, v) -> ComplexAttr (k, [v |> List.map (function Lit l -> l) |> String.concat ""]))
+    return {
+      Type = TypeInfo.FromColumnTypeDef(typeDef)
+      IsNullable = nullable
+      ColumnTypeRefName = typeDef.TypeName
+      ColumnTypeRefParams = typeDef.Params |> List.map (function BoundValue v -> v)
+      ColumnTypeRefAttributes = attrs
+    }
+  }
 
   let pAliasDef name typeParams = parse {
-    let! body, attrs = pOpenTypeRef
+    let! body, _nullable, attrs = pOpenTypeRef
     return (AliasDef ({ TypeName = name; TypeParameters = typeParams }, body), attrs)
   }
 
@@ -174,7 +188,7 @@ module internal Impl =
   let pEnumTypeDef name _typeParams = parse {
     let! cases = pEnumCases
     do! pSkipToken "based"
-    let! based, attrs = pOpenTypeRef
+    let! based, _nullable, attrs = pOpenTypeRef
     match based.ColumnTypeDef with
     | BuiltinType typ -> return (EnumTypeDef { EnumTypeName = name; BaseType = typ; Cases = cases }), attrs
     | AliasDef (typ, _orig) -> return! failFatally (sprintf "列挙型の定義(%s)の基底型には組み込み型しか指定できませんが、列定義(%s)が指定されました。" name typ.TypeName)
@@ -213,7 +227,7 @@ module internal Impl =
     do! pSkipToken "="
     let! typ, attrs = pTypeDef colTypeName colTypeParams
     do! updateUserState (fun state -> (colTypeName, colTypeParams.Length, typ, attrs, colTypeSummary, colTypeJpName)::state)
-    return ColTypeDef { ColumnSummary = colTypeSummary; ColumnTypeDef = typ; ColumnJpName = colTypeJpName; ColumnAttributes = attrs }
+    return ColTypeDef { ColumnTypeDefSummary = colTypeSummary; ColumnTypeDef = typ; ColumnTypeDefJpName = colTypeJpName; ColumnTypeDefAttributes = attrs }
   }
 
   let pColumnDef = parse {
@@ -223,10 +237,10 @@ module internal Impl =
     let! colJpName =
       if colName = "_" then preturn None else pJpNameOpt
     do! pSkipToken ":"
-    let! colType, attrs = pClosedTypeRef
+    let! colType = pClosedTypeRef
     return { ColumnSummary = colSummary
              ColumnName = if colName = "_" then Wildcard else ColumnName (colName, colJpName)
-             ColumnType = (colType, attrs) }
+             ColumnType = colType }
   }
 
   let pTableComplexAttr = parse {
@@ -234,12 +248,12 @@ module internal Impl =
     do! pSkipOnelineToken "("
     let! attrValues = sepBy pSqlValue (pchar ',' .>> wsnl)
     do! pSkipOnelineToken ")"
-    return ComplexTableAttr (attrName, attrValues)
+    return ComplexAttr (attrName, attrValues)
   }
 
   let pTableSimpleAttr = parse {
     let! attrName = pName
-    return SimpleTableAttr attrName
+    return SimpleAttr attrName
   }
 
   let pTableAttribute = parse {

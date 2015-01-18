@@ -112,11 +112,11 @@ module PrinterPluginUtil =
     and internal colTypeDefName attrs colTypeDef =
       match colTypeDef with
       | BuiltinType typ -> nonEnumTypeName attrs typ
-      | AliasDef (_typ, orgType) -> colTypeDefName (attrs ++ orgType.ColumnAttributes) orgType.ColumnTypeDef
+      | AliasDef (_typ, orgType) -> colTypeDefName (attrs ++ orgType.ColumnTypeDefAttributes) orgType.ColumnTypeDef
       | EnumTypeDef typ -> nonEnumTypeName attrs typ.BaseType
 
     and tryToTypeName attrs (typ: ColumnTypeDef) = result {
-      let attrs2 = attrs ++ typ.ColumnAttributes
+      let attrs2 = attrs ++ typ.ColumnTypeDefAttributes
       let! typeName, nullable, attrs3 = colTypeDefName attrs2 typ.ColumnTypeDef
       let! attrs4 = attrs3 |> ColumnAttribute.tryToAList
       return { TypeName = typeName; Nullable = nullable; Attributes = attrs4 }

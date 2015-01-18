@@ -54,5 +54,4 @@ module internal State =
       builtin "xml" 1
       builtin "geography" 0
       builtin "geometry" 0
-      [("nullable", 1, BuiltinType { TypeName = "nullable"; TypeParameters = [TypeVariable "@type"] }, [], None, None)]
     ] |> List.concat

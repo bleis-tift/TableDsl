@@ -29,7 +29,7 @@ module internal ColTypeDef =
   | EnumTypeDef typ -> (typ.EnumTypeName, printEnumTypeBody typ attrs)
 
   let print (col: ColumnTypeDef) =
-    let summary = printSummary 0 col.ColumnSummary
-    let jpName = printJpName col.ColumnJpName
-    let name, body = printTypeDef col.ColumnAttributes col.ColumnTypeDef
+    let summary = printSummary 0 col.ColumnTypeDefSummary
+    let jpName = printJpName col.ColumnTypeDefJpName
+    let name, body = printTypeDef col.ColumnTypeDefAttributes col.ColumnTypeDef
     sprintf "%scoltype %s%s =%s" summary name jpName body

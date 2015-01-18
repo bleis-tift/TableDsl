@@ -76,70 +76,38 @@ module Printer =
   open System.IO
   open System.Text
 
-  let printAttributeValue attrValueElems =
-    let printAttrValueElem = function
-    | Lit l -> l
-    | Var _v -> "oops!"
-
-    attrValueElems |> List.map printAttrValueElem |> Str.concat
-
-  let printIdentity attrs =
-    let identity = attrs |> List.tryFind (function "identity", _ -> true | _ -> false)
-    match identity with
-    | Some (_, _value) -> " IDENTITY(1, 1)"
-    | None -> ""
-
-  let printCollate attrs =
-    let collate = attrs |> List.tryFind (function "collate", _ -> true | _ -> false)
-    match collate with
-    | Some (_, collate) -> " COLLATE " + collate
-    | None -> ""
-
-  let printColumnTypeName attrs (typ: ColumnTypeDef) =
-    match ColumnTypeDef.tryToTypeName attrs typ with
-    | Success typeName ->
-        (typeName.TypeName + (printIdentity typeName.Attributes) + (printCollate typeName.Attributes), if typeName.Nullable then " NULL" else " NOT NULL")
-    | Failure f ->
-        failwithf "%s" (ConvertError.toStr f)
+  let printColumnTypeName (typ: ColumnTypeRef) =
+    let rootType =
+      match typ.Type with
+      | NonEnum t -> t.RootType
+      | Enum (t, _) -> t.RootType
+    let attrs = typ.AllAttrbutes
+    let identity =
+      match attrs |> Seq.tryFind (fun a -> a.Key = "identity") with Some _ -> " IDENTITY(1, 1)" | _ -> ""
+    let collate =
+      match attrs |> Seq.tryFind (fun a -> a.Key = "collate") with Some (ComplexAttr (_, [c])) -> " COLLATE " + c | _ -> ""
+    rootType + identity + collate + (if typ.IsNullable then " NULL" else " NOT NULL")
 
   let printColumnDef col =
-    let typ, attrs = col.ColumnType
+    let typ = col.ColumnType
     let name =
       match col.ColumnName with
       | ColumnName (name, _) -> name
-      | Wildcard ->
-          match typ.ColumnTypeDef with
-          | BuiltinType { TypeName = name }
-          | AliasDef ({ TypeName = name }, _)
-          | EnumTypeDef { EnumTypeName = name } -> name
-    let typeName, nullable = printColumnTypeName attrs typ
-    "[" + name + "] " + typeName + nullable
+      | Wildcard -> typ.ColumnTypeRefName
+    "[" + name + "] " + (printColumnTypeName typ)
 
   let printCreateTable table =
     "CREATE TABLE [" + table.TableName + "] (\n"
       + "    " + (table.ColumnDefs |> List.map printColumnDef |> Str.join "\n  , ")
       + "\n);"
 
-  let rec attrs'' colName = function
-  | BuiltinType _ -> Seq.empty
-  | AliasDef (_, originalType) -> attrs' colName originalType
-  | EnumTypeDef _ -> Seq.empty
-
-  and attrs' colName colTypeDef =
-    let typeDef = colTypeDef.ColumnTypeDef
-    let attrs = colTypeDef.ColumnAttributes
-    seq { yield! attrs'' colName typeDef; for attr in attrs -> (colName, attr) }
-
   let attrs colDef =
-    let typ, attrs = colDef.ColumnType
+    let typ = colDef.ColumnType
     let colName =
       match colDef.ColumnName with
-      | Wildcard ->
-          match typ.ColumnTypeDef with
-          | BuiltinType ty | AliasDef (ty, _) -> ty.TypeName
-          | EnumTypeDef ty -> ty.EnumTypeName
+      | Wildcard -> typ.ColumnTypeRefName
       | ColumnName (name, _) -> name
-    seq { yield! attrs' colName typ; for attr in attrs -> (colName, attr) }
+    typ.AllAttrbutes |> Seq.map (fun a -> (colName, a))
 
   let indexInfo defaultInfo (value: string) =
     let int str =
@@ -171,18 +139,15 @@ module Printer =
     | _ -> assert false; defaultInfo
 
   let addAlter tableName acc = function
-  | col, SimpleColAttr "PK" -> acc |> AList.add (PrimaryKey (Clustered, "PK_" + tableName)) [PrimaryKeyCol (0, col)]
-  | col, ComplexColAttr ("PK", value) ->
-      let value = printAttributeValue value
+  | col, SimpleAttr "PK" -> acc |> AList.add (PrimaryKey (Clustered, "PK_" + tableName)) [PrimaryKeyCol (0, col)]
+  | col, ComplexAttr ("PK", [value]) ->
       let indexInfo = indexInfo PrimaryKey.defaultIndexInfo value
       acc |> AList.add2 (PrimaryKey (indexInfo.ClusteredType, indexInfo.KeyNamePrefix + "_" + tableName)) (PrimaryKeyCol (indexInfo.ColumnIndex, col))
-  | col, SimpleColAttr "unique" -> acc |> AList.add (UniqueKey (NonClustered, "UQ_" + tableName)) [UniqueKeyCol (0, col)]
-  | col, ComplexColAttr ("unique", value) ->
-      let value = printAttributeValue value
+  | col, SimpleAttr "unique" -> acc |> AList.add (UniqueKey (NonClustered, "UQ_" + tableName)) [UniqueKeyCol (0, col)]
+  | col, ComplexAttr ("unique", [value]) ->
       let indexInfo = indexInfo UniqueKey.defaultIndexInfo value
       acc |> AList.add2 (UniqueKey (indexInfo.ClusteredType, indexInfo.KeyNamePrefix + "_" + tableName)) (UniqueKeyCol (indexInfo.ColumnIndex, col))
-  | col, ComplexColAttr ("FK", value) ->
-      let value = printAttributeValue value
+  | col, ComplexAttr ("FK", [value]) ->
       match value.Split([|'.'|]) with
       | [| parentTable; parentCol |] ->
           acc |> AList.add2 (ForeignKey (("FK_" + tableName + "_" + parentTable), parentTable)) (ForeignKeyCol (0, col, parentCol))
@@ -191,22 +156,20 @@ module Printer =
       | [| keyNamePrefix; order; parentTable; parentCol |] ->
           acc |> AList.add2 (ForeignKey ((keyNamePrefix + "_" + tableName + "_" + parentTable), parentTable)) (ForeignKeyCol (int order, col, parentCol))
       | _ -> assert false; failwith "oops!"
-  | col, SimpleColAttr "index" ->
+  | col, SimpleAttr "index" ->
       acc |> AList.add2 (Index (NonClustered, "IX_" + tableName)) (IndexCol (0, col))
-  | col, ComplexColAttr ("index", value) ->
-      let value = printAttributeValue value
+  | col, ComplexAttr ("index", [value]) ->
       let indexInfo = indexInfo Index.defaultIndexInfo value
       acc |> AList.add2 (Index (indexInfo.ClusteredType, indexInfo.KeyNamePrefix + "_" + tableName)) (IndexCol (indexInfo.ColumnIndex, col))
-  | col, ComplexColAttr ("default", value) ->
-      let value = printAttributeValue value
+  | col, ComplexAttr ("default", [value]) ->
       acc |> AList.add (Default ("DF_" + tableName + "_" + col)) [DefaultCol (col, value)]
-  | _col, SimpleColAttr "identity"
-  | _col, ComplexColAttr ("identity", _)
-  | _col, ComplexColAttr ("collate", _)
-  | _col, ComplexColAttr ("average", _)
-  | _col, ComplexColAttr ("max", _) -> acc // do nothing here
-  | _col, SimpleColAttr _ -> failwith "not implemented"
-  | _col, ComplexColAttr _ -> failwith "not implemented"
+  | _col, SimpleAttr "identity"
+  | _col, ComplexAttr ("identity", _)
+  | _col, ComplexAttr ("collate", _)
+  | _col, ComplexAttr ("average", _)
+  | _col, ComplexAttr ("max", _) -> acc // do nothing here
+  | _col, SimpleAttr _ -> failwith "not implemented"
+  | _col, ComplexAttr _ -> failwith "not implemented"
 
   let printCols cols =
     "    " + (cols |> List.map (fun col -> "[" + col + "]") |> Str.join "\n  , ")

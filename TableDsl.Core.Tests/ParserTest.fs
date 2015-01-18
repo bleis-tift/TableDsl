@@ -11,14 +11,14 @@ module ParserTest =
 
   let builtin0 name =
     { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [] }
-      ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None }
+      ColumnTypeDefAttributes = []; ColumnTypeDefSummary = None; ColumnTypeDefJpName = None }
 
   let builtinTypeDef0 name =
     { TypeName = name; TypeParameters = [] }
 
   let boundNullable typ =
     { ColumnTypeDef = BuiltinType { TypeName = "nullable"; TypeParameters = [BoundType typ] }
-      ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
+      ColumnTypeDefAttributes = []; ColumnTypeDefSummary = None; ColumnTypeDefJpName = None}
 
   [<Test>]
   let ``empty string`` () =
@@ -29,11 +29,11 @@ module ParserTest =
   module ColTypeDef =
     let builtin1 name _1 =
       { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [TypeVariable _1] }
-        ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
+        ColumnTypeDefAttributes = []; ColumnTypeDefSummary = None; ColumnTypeDefJpName = None}
 
     let builtin2 name _1 _2 =
       { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [TypeVariable _1; TypeVariable _2] }
-        ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
+        ColumnTypeDefAttributes = []; ColumnTypeDefSummary = None; ColumnTypeDefJpName = None}
 
     let parse input =
       Parser.parse input
@@ -48,9 +48,9 @@ module ParserTest =
       "coltype Created = datetime2"
       |> parse
       |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "Created"; TypeParameters = [] }, builtin0 "datetime2")
-                          ColumnAttributes = []
-                          ColumnSummary = None
-                          ColumnJpName = None } ]
+                          ColumnTypeDefAttributes = []
+                          ColumnTypeDefSummary = None
+                          ColumnTypeDefJpName = None } ]
 
     [<Test>]
     let ``one simple enum type`` () =
@@ -63,18 +63,18 @@ module ParserTest =
       |> should equal [ { ColumnTypeDef = EnumTypeDef { EnumTypeName = "Platform"
                                                         BaseType = builtinTypeDef0 "int"
                                                         Cases = [("iOS", None, 1); ("Android", None, 2)] }
-                          ColumnAttributes = []
-                          ColumnSummary = None
-                          ColumnJpName = None } ]
+                          ColumnTypeDefAttributes = []
+                          ColumnTypeDefSummary = None
+                          ColumnTypeDefJpName = None } ]
 
     [<Test>]
     let ``one alias def with attribute`` () =
       "coltype uniqueidentifier = { uniqueidentifier with default = NEWID() }"
       |> parse
       |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "uniqueidentifier"; TypeParameters = [] }, builtin0 "uniqueidentifier")
-                          ColumnAttributes = [ ComplexColAttr ("default", [ Lit "NEWID()" ]) ]
-                          ColumnSummary = None
-                          ColumnJpName = None } ]
+                          ColumnTypeDefAttributes = [ ComplexColAttr ("default", [ Lit "NEWID()" ]) ]
+                          ColumnTypeDefSummary = None
+                          ColumnTypeDefJpName = None } ]
 
     [<Test>]
     let ``one simple enum type with attribute`` () =
@@ -87,9 +87,9 @@ module ParserTest =
       |> should equal [ { ColumnTypeDef = EnumTypeDef { EnumTypeName = "Platform"
                                                         BaseType = builtinTypeDef0 "int"
                                                         Cases = [("iOS", None, 1); ("Android", None, 2)] }
-                          ColumnAttributes = [ ComplexColAttr ("default", [ Lit "1" ]) ]
-                          ColumnSummary = None
-                          ColumnJpName = None } ]
+                          ColumnTypeDefAttributes = [ ComplexColAttr ("default", [ Lit "1" ]) ]
+                          ColumnTypeDefSummary = None
+                          ColumnTypeDefJpName = None } ]
 
     [<Test>]
     let ``one simple enum type with jpName`` () =
@@ -102,44 +102,31 @@ module ParserTest =
       |> should equal [ { ColumnTypeDef = EnumTypeDef { EnumTypeName = "Platform"
                                                         BaseType = builtinTypeDef0 "int"
                                                         Cases = [("iOS", Some "アイオーエス", 1); ("Android", Some "アンヨヨイヨ", 2)] }
-                          ColumnAttributes = []
-                          ColumnSummary = None
-                          ColumnJpName = None } ]
+                          ColumnTypeDefAttributes = []
+                          ColumnTypeDefSummary = None
+                          ColumnTypeDefJpName = None } ]
 
     [<Test>]
     let ``one generic alias def - partial bound`` () =
       let originalType =
         { ColumnTypeDef = BuiltinType { TypeName = "decimal"; TypeParameters = [TypeVariable "@n"; BoundValue "4"] }
-          ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
+          ColumnTypeDefAttributes = []; ColumnTypeDefSummary = None; ColumnTypeDefJpName = None}
 
       "coltype T(@n) = decimal(@n, 4)"
       |> parse
       |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "T"; TypeParameters = [TypeVariable "@n"] }, originalType)
-                          ColumnAttributes = []
-                          ColumnSummary = None
-                          ColumnJpName = None } ]
-
-    [<Test>]
-    let ``one alias def with nested type`` () =
-      let nvarchar256 = { ColumnTypeDef = BuiltinType { TypeName = "nvarchar"; TypeParameters = [BoundValue "256"] }
-                          ColumnAttributes = []
-                          ColumnSummary = None
-                          ColumnJpName = None }
-      "coltype T = nullable(nvarchar(256))"
-      |> parse
-      |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "T"; TypeParameters = [] }, boundNullable nvarchar256)
-                          ColumnAttributes = []
-                          ColumnSummary = None
-                          ColumnJpName = None } ]
+                          ColumnTypeDefAttributes = []
+                          ColumnTypeDefSummary = None
+                          ColumnTypeDefJpName = None } ]
 
     [<Test>]
     let ``one generic alias def with attribute`` () =
       "coltype nvarchar(@n) = { nvarchar(@n) with collate = Japanese_BIN }"
       |> parse
       |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "nvarchar"; TypeParameters = [TypeVariable "@n"] }, builtin1 "nvarchar" "@n")
-                          ColumnAttributes = [ ComplexColAttr ("collate", [ Lit "Japanese_BIN" ]) ]
-                          ColumnSummary = None
-                          ColumnJpName = None } ]
+                          ColumnTypeDefAttributes = [ ComplexColAttr ("collate", [ Lit "Japanese_BIN" ]) ]
+                          ColumnTypeDefSummary = None
+                          ColumnTypeDefJpName = None } ]
 
     [<Test>]
     let ``generic alias def with parameterized attribute value`` () =
@@ -147,9 +134,9 @@ module ParserTest =
       |> parse
       |> should equal [ { ColumnTypeDef =
                             AliasDef ({ TypeName = "T"; TypeParameters = [TypeVariable "@a"; TypeVariable "@b"; TypeVariable "@c"] }, builtin0 "int")
-                          ColumnAttributes = [ ComplexColAttr ("default", [ Lit "1"; Var "@a"; Var "@b"; Var "@c" ]) ]
-                          ColumnSummary = None
-                          ColumnJpName = None } ]
+                          ColumnTypeDefAttributes = [ ComplexColAttr ("default", [ Lit "1"; Var "@a"; Var "@b"; Var "@c" ]) ]
+                          ColumnTypeDefSummary = None
+                          ColumnTypeDefJpName = None } ]
 
     [<Test>]
     let ``two alias defs`` () =
@@ -161,14 +148,14 @@ module ParserTest =
       |> should equal
            [ let fkType sndParam sndAttr =
                { ColumnTypeDef = AliasDef ({ TypeName = "FK"; TypeParameters = [TypeVariable "@table"; sndParam] }, builtin0 "uniqueidentifier")
-                 ColumnAttributes = [ ComplexColAttr ("FK", [ Var "@table"; Lit "."; sndAttr ]) ]
-                 ColumnSummary = None
-                 ColumnJpName = None }
+                 ColumnTypeDefAttributes = [ ComplexColAttr ("FK", [ Var "@table"; Lit "."; sndAttr ]) ]
+                 ColumnTypeDefSummary = None
+                 ColumnTypeDefJpName = None }
              yield fkType (TypeVariable "@col") (Var "@col")
              yield { ColumnTypeDef = AliasDef ({ TypeName = "FKID"; TypeParameters = [TypeVariable "@table"] }, fkType (BoundValue "Id") (Lit "Id"))
-                     ColumnAttributes = []
-                     ColumnSummary = None
-                     ColumnJpName = None }
+                     ColumnTypeDefAttributes = []
+                     ColumnTypeDefSummary = None
+                     ColumnTypeDefJpName = None }
            ]
 
     [<Test>]
@@ -179,9 +166,9 @@ module ParserTest =
       """
       |> parse
       |> should equal [ { ColumnTypeDef = AliasDef ({ TypeName = "Name"; TypeParameters = [] }, builtin0 "nvarchar")
-                          ColumnAttributes = [ ComplexColAttr ("collate", [ Lit "Japanese_BIN" ]) ]
-                          ColumnSummary = Some "名前を表します。"
-                          ColumnJpName = Some "名前" } ]
+                          ColumnTypeDefAttributes = [ ComplexColAttr ("collate", [ Lit "Japanese_BIN" ]) ]
+                          ColumnTypeDefSummary = Some "名前を表します。"
+                          ColumnTypeDefJpName = Some "名前" } ]
 
     [<Test>]
     let ``dup type variable`` () =
@@ -215,14 +202,14 @@ module ParserTest =
   module TableDef =
     let nullable typ =
       { ColumnTypeDef = BuiltinType { TypeName = "nullable"; TypeParameters = [BoundType typ] }
-        ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None }
+        ColumnTypeDefAttributes = []; ColumnTypeDefSummary = None; ColumnTypeDefJpName = None }
     let builtin1 name _1 =
       { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [BoundValue _1] }
-        ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
+        ColumnTypeDefAttributes = []; ColumnTypeDefSummary = None; ColumnTypeDefJpName = None}
 
     let builtin2 name _1 _2 =
       { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [BoundValue _1; BoundValue _2] }
-        ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None}
+        ColumnTypeDefAttributes = []; ColumnTypeDefSummary = None; ColumnTypeDefJpName = None}
 
     let parse input =
       Parser.parse input
@@ -249,10 +236,24 @@ module ParserTest =
                ColumnDefs =
                  [ { ColumnSummary = None
                      ColumnName = ColumnName ("Id", None)
-                     ColumnType = (builtin0 "int", []) }
+                     ColumnType = { Type = NonEnum { RootType = "int"
+                                                     ColumnTypeSummary = None
+                                                     ColumnTypeJpName = None
+                                                     ColumnTypeAttributes = [] }
+                                    IsNullable = false
+                                    ColumnTypeRefName = "int"
+                                    ColumnTypeRefParams = []
+                                    ColumnTypeRefAttributes = [] } }
                    { ColumnSummary = None
                      ColumnName = ColumnName ("Name", None)
-                     ColumnType = (builtin1 "nvarchar" "16", []) } ]
+                     ColumnType = { Type = NonEnum { RootType = "nvarchar(16)"
+                                                     ColumnTypeSummary = None
+                                                     ColumnTypeJpName = None
+                                                     ColumnTypeAttributes = [] }
+                                    IsNullable = false
+                                    ColumnTypeRefName = "nvarchar"
+                                    ColumnTypeRefParams = ["16"]
+                                    ColumnTypeRefAttributes = [] } } ]
              }
            ]
 
@@ -277,10 +278,24 @@ module ParserTest =
                ColumnDefs =
                  [ { ColumnSummary = None
                      ColumnName = ColumnName ("Id", None)
-                     ColumnType = (builtin0 "int", []) }
+                     ColumnType = { Type = NonEnum { RootType = "int"
+                                                     ColumnTypeSummary = None
+                                                     ColumnTypeJpName = None
+                                                     ColumnTypeAttributes = [] }
+                                    IsNullable = false
+                                    ColumnTypeRefName = "int"
+                                    ColumnTypeRefParams = []
+                                    ColumnTypeRefAttributes = [] } }
                    { ColumnSummary = None
                      ColumnName = ColumnName ("Name", None)
-                     ColumnType = (builtin1 "nvarchar" "16", []) } ]
+                     ColumnType = { Type = NonEnum { RootType = "nvarchar(16)"
+                                                     ColumnTypeSummary = None
+                                                     ColumnTypeJpName = None
+                                                     ColumnTypeAttributes = [] }
+                                    IsNullable = false
+                                    ColumnTypeRefName = "nvarchar"
+                                    ColumnTypeRefParams = ["16"]
+                                    ColumnTypeRefAttributes = [] } } ]
              }
              { TableSummary = None
                TableAttributes = []
@@ -289,10 +304,24 @@ module ParserTest =
                ColumnDefs =
                  [ { ColumnSummary = None
                      ColumnName = ColumnName ("Id", None)
-                     ColumnType = (builtin0 "int", []) }
+                     ColumnType = { Type = NonEnum { RootType = "int"
+                                                     ColumnTypeSummary = None
+                                                     ColumnTypeJpName = None
+                                                     ColumnTypeAttributes = [] }
+                                    IsNullable = false
+                                    ColumnTypeRefName = "int"
+                                    ColumnTypeRefParams = []
+                                    ColumnTypeRefAttributes = [] } }
                    { ColumnSummary = None
                      ColumnName = ColumnName ("UserId", None)
-                     ColumnType = (builtin0 "int", []) } ] }
+                     ColumnType = { Type = NonEnum { RootType = "int"
+                                                     ColumnTypeSummary = None
+                                                     ColumnTypeJpName = None
+                                                     ColumnTypeAttributes = [] }
+                                    IsNullable = false
+                                    ColumnTypeRefName = "int"
+                                    ColumnTypeRefParams = []
+                                    ColumnTypeRefAttributes = [] } } ] }
            ]
 
     [<Test>]
@@ -311,7 +340,14 @@ module ParserTest =
                ColumnDefs =
                  [ { ColumnSummary = None
                      ColumnName = ColumnName ("Id", None)
-                     ColumnType = (builtin0 "uniqueidentifier", [SimpleColAttr "PK"]) } ]
+                     ColumnType = { Type = NonEnum { RootType = "uniqueidentifier"
+                                                     ColumnTypeSummary = None
+                                                     ColumnTypeJpName = None
+                                                     ColumnTypeAttributes = [] }
+                                    IsNullable = false
+                                    ColumnTypeRefName = "uniqueidentifier"
+                                    ColumnTypeRefParams = []
+                                    ColumnTypeRefAttributes = [SimpleAttr "PK"] } } ]
              }
            ]
 
@@ -331,7 +367,14 @@ module ParserTest =
                ColumnDefs =
                  [ { ColumnSummary = None
                      ColumnName = ColumnName ("Id", None)
-                     ColumnType = (builtin0 "uniqueidentifier", [ComplexColAttr ("index", [ Lit "unclustered.IX1.1" ])]) } ]
+                     ColumnType = { Type = NonEnum { RootType = "uniqueidentifier"
+                                                     ColumnTypeSummary = None
+                                                     ColumnTypeJpName = None
+                                                     ColumnTypeAttributes = [] }
+                                    IsNullable = false
+                                    ColumnTypeRefName = "uniqueidentifier"
+                                    ColumnTypeRefParams = []
+                                    ColumnTypeRefAttributes = [ComplexAttr ("index", ["unclustered.IX1.1"])] } } ]
              }
            ]
 
@@ -351,10 +394,17 @@ module ParserTest =
                ColumnDefs =
                  [ { ColumnSummary = None
                      ColumnName = ColumnName ("Id", None)
-                     ColumnType = (builtin0 "uniqueidentifier",
-                                   [ ComplexColAttr ("PK", [ Lit "unclustered" ])
-                                     ComplexColAttr ("index", [ Lit "clustered.IX1.1" ])
-                                     SimpleColAttr "unique" ]) } ]
+                     ColumnType = { Type = NonEnum { RootType = "uniqueidentifier"
+                                                     ColumnTypeSummary = None
+                                                     ColumnTypeJpName = None
+                                                     ColumnTypeAttributes = [] }
+                                    IsNullable = false
+                                    ColumnTypeRefName = "uniqueidentifier"
+                                    ColumnTypeRefParams = []
+                                    ColumnTypeRefAttributes =
+                                      [ComplexAttr ("PK", ["unclustered"])
+                                       ComplexAttr ("index", ["clustered.IX1.1"])
+                                       SimpleAttr "unique"] } } ]
              }
            ]
 
@@ -374,7 +424,14 @@ module ParserTest =
                ColumnDefs =
                  [ { ColumnSummary = None
                      ColumnName = Wildcard
-                     ColumnType = (builtin0 "datetime2", []) } ] } ]
+                     ColumnType = { Type = NonEnum { RootType = "datetime2"
+                                                     ColumnTypeSummary = None
+                                                     ColumnTypeJpName = None
+                                                     ColumnTypeAttributes = [] }
+                                    IsNullable = false
+                                    ColumnTypeRefName = "datetime2"
+                                    ColumnTypeRefParams = []
+                                    ColumnTypeRefAttributes = [] } } ] } ]
 
     [<Test>]
     let ``nullable type`` () =
@@ -394,13 +451,34 @@ module ParserTest =
                ColumnDefs =
                  [ { ColumnSummary = None
                      ColumnName = ColumnName ("Id", None)
-                     ColumnType = (builtin0 "int", []) }
+                     ColumnType = { Type = NonEnum { RootType = "int"
+                                                     ColumnTypeSummary = None
+                                                     ColumnTypeJpName = None
+                                                     ColumnTypeAttributes = [] }
+                                    IsNullable = false
+                                    ColumnTypeRefName = "int"
+                                    ColumnTypeRefParams = []
+                                    ColumnTypeRefAttributes = [] } }
                    { ColumnSummary = None
                      ColumnName = ColumnName ("Name", None)
-                     ColumnType = (nullable (builtin1 "nvarchar" "16"), []) }
+                     ColumnType = { Type = NonEnum { RootType = "nvarchar(16)"
+                                                     ColumnTypeSummary = None
+                                                     ColumnTypeJpName = None
+                                                     ColumnTypeAttributes = [] }
+                                    IsNullable = true
+                                    ColumnTypeRefName = "nvarchar"
+                                    ColumnTypeRefParams = ["16"]
+                                    ColumnTypeRefAttributes = [] } }
                    { ColumnSummary = None
                      ColumnName = ColumnName ("Age", None)
-                     ColumnType = (nullable (builtin0 "int"), []) } ]
+                     ColumnType = { Type = NonEnum { RootType = "int"
+                                                     ColumnTypeSummary = None
+                                                     ColumnTypeJpName = None
+                                                     ColumnTypeAttributes = [] }
+                                    IsNullable = true
+                                    ColumnTypeRefName = "int"
+                                    ColumnTypeRefParams = []
+                                    ColumnTypeRefAttributes = [] } } ]
              }
            ]
 
@@ -425,10 +503,24 @@ module ParserTest =
                ColumnDefs =
                  [ { ColumnSummary = Some "ID"
                      ColumnName = ColumnName ("Id", Some "ID")
-                     ColumnType = (builtin0 "int", []) }
+                     ColumnType = { Type = NonEnum { RootType = "int"
+                                                     ColumnTypeSummary = None
+                                                     ColumnTypeJpName = None
+                                                     ColumnTypeAttributes = [] }
+                                    IsNullable = false
+                                    ColumnTypeRefName = "int"
+                                    ColumnTypeRefParams = []
+                                    ColumnTypeRefAttributes = [] } }
                    { ColumnSummary = Some "ユーザ名"
                      ColumnName = ColumnName ("Name", Some "名前")
-                     ColumnType = (builtin1 "nvarchar" "16", []) } ]
+                     ColumnType = { Type = NonEnum { RootType = "nvarchar(16)"
+                                                     ColumnTypeSummary = None
+                                                     ColumnTypeJpName = None
+                                                     ColumnTypeAttributes = [] }
+                                    IsNullable = false
+                                    ColumnTypeRefName = "nvarchar"
+                                    ColumnTypeRefParams = ["16"]
+                                    ColumnTypeRefAttributes = [] } } ]
              }
            ]
 
@@ -457,13 +549,20 @@ module ParserTest =
       |> parse
       |> should equal
            [ { TableSummary = None
-               TableAttributes = [SimpleTableAttr "Master"]
+               TableAttributes = [SimpleAttr "Master"]
                TableName = "Apps"
                TableJpName = None
                ColumnDefs =
                  [ { ColumnSummary = None
                      ColumnName = ColumnName ("Id", None)
-                     ColumnType = (builtin0 "int", []) }]
+                     ColumnType = { Type = NonEnum { RootType = "int"
+                                                     ColumnTypeSummary = None
+                                                     ColumnTypeJpName = None
+                                                     ColumnTypeAttributes = [] }
+                                    IsNullable = false
+                                    ColumnTypeRefName = "int"
+                                    ColumnTypeRefParams = []
+                                    ColumnTypeRefAttributes = [] } } ]
              }
            ]
 
@@ -478,13 +577,20 @@ module ParserTest =
       |> parse
       |> should equal
            [ { TableSummary = None
-               TableAttributes = [ComplexTableAttr ("Foo", ["0"; "abcd"])]
+               TableAttributes = [ComplexAttr ("Foo", ["0"; "abcd"])]
                TableName = "Apps"
                TableJpName = None
                ColumnDefs =
                  [ { ColumnSummary = None
                      ColumnName = ColumnName ("Id", None)
-                     ColumnType = (builtin0 "int", []) }]
+                     ColumnType = { Type = NonEnum { RootType = "int"
+                                                     ColumnTypeSummary = None
+                                                     ColumnTypeJpName = None
+                                                     ColumnTypeAttributes = [] }
+                                    IsNullable = false
+                                    ColumnTypeRefName = "int"
+                                    ColumnTypeRefParams = []
+                                    ColumnTypeRefAttributes = [] } } ]
              }
            ]
 
@@ -500,13 +606,20 @@ module ParserTest =
       |> parse
       |> should equal
            [ { TableSummary = None
-               TableAttributes = [SimpleTableAttr "Master"; ComplexTableAttr ("Foo", ["0"; "abcd"])]
+               TableAttributes = [SimpleAttr "Master"; ComplexAttr ("Foo", ["0"; "abcd"])]
                TableName = "Apps"
                TableJpName = None
                ColumnDefs =
                  [ { ColumnSummary = None
                      ColumnName = ColumnName ("Id", None)
-                     ColumnType = (builtin0 "int", []) }]
+                     ColumnType = { Type = NonEnum { RootType = "int"
+                                                     ColumnTypeSummary = None
+                                                     ColumnTypeJpName = None
+                                                     ColumnTypeAttributes = [] }
+                                    IsNullable = false
+                                    ColumnTypeRefName = "int"
+                                    ColumnTypeRefParams = []
+                                    ColumnTypeRefAttributes = [] } } ]
              }
            ]
     
@@ -514,15 +627,15 @@ module ParserTest =
 
     let builtin1 name _1 =
       { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [TypeVariable _1] }
-        ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None }
+        ColumnTypeDefAttributes = []; ColumnTypeDefSummary = None; ColumnTypeDefJpName = None }
 
     [<Test>]
     let ``type def is expanded inline in table def`` () =
       let colDef p = 
         { ColumnTypeDef = AliasDef ({ TypeName = "Name"; TypeParameters = p }, builtin1 "nvarchar" "@n")
-                          ColumnAttributes = [ ComplexColAttr ("collate", [ Lit "Japanese_BIN" ]); ComplexColAttr ("default", [ Lit "42" ]) ]
-                          ColumnSummary = Some "名前を表します。"
-                          ColumnJpName = Some "名前" }
+                          ColumnTypeDefAttributes = [ ComplexColAttr ("collate", [ Lit "Japanese_BIN" ]); ComplexColAttr ("default", [ Lit "42" ]) ]
+                          ColumnTypeDefSummary = Some "名前を表します。"
+                          ColumnTypeDefJpName = Some "名前" }
       """
       /// 名前を表します。
       coltype Name(@n)[名前] = { nvarchar(@n) with collate = Japanese_BIN; default = 42 }
@@ -547,20 +660,26 @@ module ParserTest =
                     [
                       { ColumnSummary = Some "ID" 
                         ColumnName = ColumnName ("Id", Some "ID")
-                        ColumnType = (builtin0 "int", []) }
+                        ColumnType = { Type = NonEnum { RootType = "int"
+                                                        ColumnTypeSummary = None
+                                                        ColumnTypeJpName = None
+                                                        ColumnTypeAttributes = [] }
+                                       IsNullable = false
+                                       ColumnTypeRefName = "int"
+                                       ColumnTypeRefParams = []
+                                       ColumnTypeRefAttributes = [] } }
                       { ColumnSummary = Some "ユーザ名" 
                         ColumnName = Wildcard
-                        ColumnType = 
-                          { ColumnTypeDef = 
-                              AliasDef (
-                                { TypeName = "Name"; 
-                                  TypeParameters = [BoundValue "256"] }, 
-                                  { ColumnTypeDef = BuiltinType { TypeName = "nvarchar"; TypeParameters = [BoundValue "256"] }
-                                    ColumnAttributes = []; ColumnSummary = None; ColumnJpName = None })
-                            ColumnAttributes = [ ComplexColAttr ("collate", [ Lit "Japanese_BIN" ]); ComplexColAttr ("default", [ Lit "42" ])]
-                            ColumnSummary = Some "名前を表します。"
-                            ColumnJpName = Some "名前" },  []
-                      }
+                        ColumnType = { Type = NonEnum { RootType = "nvarchar(256)"
+                                                        ColumnTypeSummary = Some "名前を表します。"
+                                                        ColumnTypeJpName = Some "名前"
+                                                        ColumnTypeAttributes =
+                                                          [ComplexAttr ("collate", ["Japanese_BIN"])
+                                                           ComplexAttr ("default", ["42"])] }
+                                       IsNullable = false
+                                       ColumnTypeRefName = "Name"
+                                       ColumnTypeRefParams = ["256"]
+                                       ColumnTypeRefAttributes = [] } }
                     ]
                 }
             ]
