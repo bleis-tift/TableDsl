@@ -1,2 +1,3 @@
 ﻿table-name-s
 snake-case
+upper-case

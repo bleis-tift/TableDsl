@@ -57,3 +57,22 @@ module SnakeCase =
     |> Seq.filter (snd >> Str.contains "_")
     |> Seq.map (fun (kind, n) -> { Level = level; Message = sprintf "%sにスネークケースが使われています: %s" kind n })
     |> Seq.toList
+
+[<RuleCheckerPlugin("upper-case", RuleLevel.Warning, "")>]
+module UpperCase =
+  open System
+
+  let check (level: RuleLevel) (_arg: string) (elems: Element list) : DetectedItem list =
+    let names =
+      elems
+      |> Seq.collect (function
+                      | TableDef t -> seq { yield ("テーブル名", t.TableName)
+                                            yield! t.ColumnDefs
+                                                   |> Seq.map (fun cd -> match cd.ColumnName with
+                                                                         | Wildcard -> ("列名", cd.ColumnType.ColumnTypeRefName)
+                                                                         | ColumnName (n, _) -> ("列名", n)) }
+                      | _ -> Seq.empty)
+    names
+    |> Seq.filter (snd >> Str.forall Char.IsUpper)
+    |> Seq.map (fun (kind, n) -> { Level = level; Message = sprintf "%sにスネークケースが使われています: %s" kind n })
+    |> Seq.toList

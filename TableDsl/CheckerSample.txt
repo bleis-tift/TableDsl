@@ -1,4 +1,5 @@
 ﻿coltype snake_case_col = int
+coltype UPPERCOLDEF = int
 
 table User = {
   UserId: int
@@ -7,4 +8,9 @@ table User = {
 table snake_case_tables = {
   snake_case_column: int
   _: snake_case_col
+}
+
+table UPPERTABLES = {
+  UPPERCOL: int
+  _: UPPERCOLDEF
 }
