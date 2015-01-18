@@ -2,25 +2,34 @@
 coltype UPPERCOLDEF[列3] = int
 coltype lowercoldef[列4] = int
 
+/// User
 table User[ユーザ名] = {
   UserId[ユーザID]: int
 }
 
+/// テーブル1
 table snake_case_tables[テーブル1] = {
   snake_case_column[列1]: int
   _: snake_case_col
 }
 
+/// テーブル2
 table UPPERTABLES[テーブル2] = {
   UPPERCOL[列1]: int
   _: UPPERCOLDEF
 }
 
+/// テーブル3
 table lowertables[テーブル3] = {
   lowercol[列1]: int
   _: lowercoldef
 }
 
+/// ユーザ
 table Users = {
   Id: int
+}
+
+table NonSummaryTables[テーブル4] = {
+  Id[Id]: int
 }

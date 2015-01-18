@@ -90,3 +90,13 @@ module JpName =
     jpNames
     |> Seq.choose (function (x, name, None) -> Some { Level = level; Message = sprintf "日本語名を持たない%sがあります: %s" x name } | _ -> None)
     |> Seq.toList
+
+[<RuleCheckerPlugin("table-summary", RuleLevel.Warning, "")>]
+module TableSummary =
+  let check (level: RuleLevel) (_arg: string) (elems: Element list) : DetectedItem list =
+    let summaries =
+      elems
+      |> Seq.collect (function TableDef t -> seq { yield (t.TableName, t.TableSummary) } | _ -> Seq.empty)
+    summaries
+    |> Seq.choose (function (name, None) -> Some { Level = level; Message = sprintf "サマリを持たないテーブルがあります: %s" name } | _ -> None)
+    |> Seq.toList
