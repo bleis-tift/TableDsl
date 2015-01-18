@@ -74,3 +74,19 @@ module UpperCase =
 module LowerCase =
   let check (level: RuleLevel) (_arg: string) (elems: Element list) : DetectedItem list =
     Util.check level _arg "小文字のみの%sがあります: %s" (Str.forall Char.IsLower) elems
+
+[<RuleCheckerPlugin("jp-name", RuleLevel.Warning, "")>]
+module JpName =
+  let check (level: RuleLevel) (_arg: string) (elems: Element list) : DetectedItem list =
+    let jpNames =
+      elems
+      |> Seq.collect (function
+                      | TableDef t -> seq { yield ("テーブル", t.TableName, t.TableJpName)
+                                            yield! t.ColumnDefs
+                                                   |> Seq.map (fun cd -> match cd.ColumnName with
+                                                                         | Wildcard -> ("列", cd.ColumnType.ColumnTypeRefName, cd.ColumnType.Type.ColumnType.ColumnTypeJpName)
+                                                                         | ColumnName (n, jpName) -> ("列", n, jpName)) }
+                      | _ -> Seq.empty)
+    jpNames
+    |> Seq.choose (function (x, name, None) -> Some { Level = level; Message = sprintf "日本語名を持たない%sがあります: %s" x name } | _ -> None)
+    |> Seq.toList

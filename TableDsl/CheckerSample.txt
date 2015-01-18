@@ -1,22 +1,26 @@
-﻿coltype snake_case_col = int
-coltype UPPERCOLDEF = int
-coltype lowercoldef = int
+﻿coltype snake_case_col[列2] = int
+coltype UPPERCOLDEF[列3] = int
+coltype lowercoldef[列4] = int
 
-table User = {
-  UserId: int
+table User[ユーザ名] = {
+  UserId[ユーザID]: int
 }
 
-table snake_case_tables = {
-  snake_case_column: int
+table snake_case_tables[テーブル1] = {
+  snake_case_column[列1]: int
   _: snake_case_col
 }
 
-table UPPERTABLES = {
-  UPPERCOL: int
+table UPPERTABLES[テーブル2] = {
+  UPPERCOL[列1]: int
   _: UPPERCOLDEF
 }
 
-table lowertables = {
-  lowercol: int
+table lowertables[テーブル3] = {
+  lowercol[列1]: int
   _: lowercoldef
+}
+
+table Users = {
+  Id: int
 }

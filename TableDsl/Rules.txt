@@ -2,3 +2,4 @@
 snake-case
 upper-case
 lower-case
+jp-name
