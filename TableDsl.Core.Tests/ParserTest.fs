@@ -16,6 +16,9 @@ module ParserTest =
   let builtinTypeDef0 name =
     { TypeName = name; TypeParameters = [] }
 
+  let builtinTypeDef1 name param =
+    { TypeName = name; TypeParameters = [param] }
+
   [<Test>]
   let ``empty string`` () =
     ""
@@ -58,7 +61,22 @@ module ParserTest =
       |> parse
       |> should equal [ { ColumnTypeDef = EnumTypeDef { EnumTypeName = "Platform"
                                                         BaseType = builtinTypeDef0 "int"
-                                                        Cases = [("iOS", None, 1); ("Android", None, 2)] }
+                                                        Cases = [("iOS", None, "1"); ("Android", None, "2")] }
+                          ColumnTypeDefAttributes = []
+                          ColumnTypeDefSummary = None
+                          ColumnTypeDefJpName = None } ]
+
+    [<Test>]
+    let ``one simple enum char type`` () =
+      """
+      coltype Platform =
+        | iOS = '1'
+        | Android = '2'
+      based char(1)"""
+      |> parse
+      |> should equal [ { ColumnTypeDef = EnumTypeDef { EnumTypeName = "Platform"
+                                                        BaseType = builtinTypeDef1 "char" (BoundValue "1")
+                                                        Cases = [("iOS", None, "'1'"); ("Android", None, "'2'")] }
                           ColumnTypeDefAttributes = []
                           ColumnTypeDefSummary = None
                           ColumnTypeDefJpName = None } ]
@@ -82,7 +100,7 @@ module ParserTest =
       |> parse
       |> should equal [ { ColumnTypeDef = EnumTypeDef { EnumTypeName = "Platform"
                                                         BaseType = builtinTypeDef0 "int"
-                                                        Cases = [("iOS", None, 1); ("Android", None, 2)] }
+                                                        Cases = [("iOS", None, "1"); ("Android", None, "2")] }
                           ColumnTypeDefAttributes = [ ComplexColAttr ("default", [ Lit "1" ]) ]
                           ColumnTypeDefSummary = None
                           ColumnTypeDefJpName = None } ]
@@ -97,7 +115,7 @@ module ParserTest =
       |> parse
       |> should equal [ { ColumnTypeDef = EnumTypeDef { EnumTypeName = "Platform"
                                                         BaseType = builtinTypeDef0 "int"
-                                                        Cases = [("iOS", Some "アイオーエス", 1); ("Android", Some "アンヨヨイヨ", 2)] }
+                                                        Cases = [("iOS", Some "アイオーエス", "1"); ("Android", Some "アンヨヨイヨ", "2")] }
                           ColumnTypeDefAttributes = []
                           ColumnTypeDefSummary = None
                           ColumnTypeDefJpName = None } ]

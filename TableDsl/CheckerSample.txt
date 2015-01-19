@@ -39,3 +39,12 @@ table InvalidPrefixes[テーブル5] = {
   LoginName[ログイン名]: { nvarchar(16) with unique = IX.1 }
   Name[名前]: { nvarchar(256) with index = PK.1 }
 }
+
+coltype CharEnum[列] =
+  | A = '0'
+  | B = '1'
+based char(1)
+
+table CharEnums[テーブル6] = {
+  _: CharEnum
+}

@@ -5,3 +5,4 @@ lower-case
 jp-name
 table-summary
 invalid-prefix
+char-enum

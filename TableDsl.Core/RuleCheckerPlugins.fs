@@ -155,3 +155,17 @@ module InvalidPrefix =
                 | (table, col, "index", value) -> { Level = RuleLevel.Fatal; Message = sprintf "インデックスのプレフィックスはIXですが、%sが指定されました: %s.%s" value table col }
                 | other -> failwithf "oops!: %A" other)
     |> Seq.toList
+
+[<RuleCheckerPlugin("char-enum", RuleLevel.Warning, "")>]
+module CharEnum =
+  let check (level: RuleLevel) (_arg: string) (elems: Element list) : DetectedItem list =
+    let enums =
+      elems
+      |> Seq.choose (function ColTypeDef { ColumnTypeDef = (EnumTypeDef enum) } -> Some enum | _ -> None)
+    enums
+    |> Seq.choose (fun enum ->
+         match enum.BaseType.TypeName with
+         | "char" | "varchar" | "text" | "ntext" | "nchar" | "nvarchar" ->
+             Some { Level = level; Message = sprintf "文字型をベースにした列挙型があります: %s" enum.EnumTypeName }
+         | _ -> None)
+    |> Seq.toList

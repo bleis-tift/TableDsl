@@ -47,7 +47,7 @@ with
 and EnumType = {
   EnumTypeName: string
   BaseType: NonEnumType
-  Cases: (string * string option * int) list
+  Cases: (string * string option * string) list
 }
 with
   override this.ToString() = sprintf "%A" this
@@ -92,7 +92,7 @@ with
 /// 非列挙型(NonEnum)と列挙型(Enum)の型情報
 type ColumnTypeRefKind =
   | NonEnum of ColumnTypeRef
-  | Enum of ColumnTypeRef * (string * string option * int) list
+  | Enum of ColumnTypeRef * (string * string option * string) list
 with
   override this.ToString() = sprintf "%A" this
 

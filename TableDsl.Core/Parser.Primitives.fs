@@ -67,3 +67,5 @@ module internal Primitives =
   let pIndexSetting: Parser<_> = sepBy1 (regex @"[a-zA-Z0-9_]+") (pchar '.') |>> String.concat "."
 
   let pPlaceholders: Parser<_> = regex @"[a-zA-Z0-9_.]+(\([a-zA-Z0-9_., ]*\))?"
+
+  let pEnumCaseValue: Parser<_> = SqlParsers.pSqlNum <|> SqlParsers.pSqlString
