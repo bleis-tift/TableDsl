@@ -20,21 +20,21 @@ module TableDef =
     | [] -> nonEnumType.TypeName
     | _other -> nonEnumType.TypeName + (printOpenTypeParams nonEnumType.TypeParameters)
 
-  let printColumnTypeRef (col: ColumnTypeRef) =
+  let printColumnTypeRef (col: ColumnType) =
     let typ =
-      col.ColumnTypeRefName +
-      if col.ColumnTypeRefParams.IsEmpty then "" else ("(" + (col.ColumnTypeRefParams |> String.concat ", ") + ")")
+      col.ColumnTypeName +
+      if col.ColumnTypeParams.IsEmpty then "" else ("(" + (col.ColumnTypeParams |> String.concat ", ") + ")")
     " " +
-      printColumnAttributes (if col.IsNullable then printNullable typ else typ) col.ColumnTypeRefAttributes
+      printColumnAttributes (if col.IsNullable then printNullable typ else typ) col.ColumnTypeAttributes
 
   let printColumnName = function
   | Wildcard -> "_"
   | ColumnName (name, jpName) -> name + (printJpName jpName)
 
   let printColumnDef colDef =
-    let summary = printSummary 2 colDef.ColumnSummary
-    let name = printColumnName colDef.ColumnName
-    let typ = printColumnTypeRef colDef.ColumnType
+    let summary = printSummary 2 colDef.ColumnDefSummary
+    let name = printColumnName colDef.ColumnDefName
+    let typ = printColumnTypeRef colDef.ColumnDefType
     sprintf "%s  %s:%s" summary name typ
 
   let printTableAttributes attrs =
@@ -45,9 +45,9 @@ module TableDef =
     |> Str.join "\n"
 
   let print table =
-    let summary = printSummary 0 table.TableSummary
-    let attrs = printTableAttributes table.TableAttributes
-    let name = table.TableName
-    let jpName = printJpName table.TableJpName
+    let summary = printSummary 0 table.TableDefSummary
+    let attrs = printTableAttributes table.TableDefAttributes
+    let name = table.TableDefName
+    let jpName = printJpName table.TableDefJpName
     let body = table.ColumnDefs |> List.map printColumnDef |> Str.join "\n"
     sprintf "%s%stable %s%s = {\n%s\n}" summary attrs name jpName body

@@ -37,7 +37,7 @@ module TableNameS =
 
   let check (level: RuleLevel) (arg: string) (elems: Element list) : DetectedItem list =
     let tableNames =
-      elems |> Seq.choose (function TableDef t -> Some t.TableName | _ -> None)
+      elems |> Seq.choose (function TableDef t -> Some t.TableDefName | _ -> None)
     tableNames
     |> Seq.choose (singularName level (arg.Split(',') |> Array.map Str.trim))
     |> Seq.toList
@@ -46,11 +46,9 @@ module private Util =
   let names (elems: Element list) =
     elems
     |> Seq.collect (function
-                    | TableDef t -> seq { yield ("テーブル名", t.TableName)
+                    | TableDef t -> seq { yield ("テーブル名", t.TableDefName)
                                           yield! t.ColumnDefs
-                                                 |> Seq.map (fun cd -> match cd.ColumnName with
-                                                                       | Wildcard -> ("列名", cd.ColumnType.ColumnTypeRefName)
-                                                                       | ColumnName (n, _) -> ("列名", n)) }
+                                                 |> Seq.map (fun cd -> ("列名", ColumnDef.actualName cd)) }
                     | _ -> Seq.empty)
 
   let check level _arg format pred elems  =
@@ -81,11 +79,9 @@ module JpName =
     let jpNames =
       elems
       |> Seq.collect (function
-                      | TableDef t -> seq { yield ("テーブル", t.TableName, t.TableJpName)
+                      | TableDef t -> seq { yield ("テーブル", t.TableDefName, t.TableDefJpName)
                                             yield! t.ColumnDefs
-                                                   |> Seq.map (fun cd -> match cd.ColumnName with
-                                                                         | Wildcard -> ("列", cd.ColumnType.ColumnTypeRefName, cd.ColumnType.Type.ColumnType.ColumnTypeJpName)
-                                                                         | ColumnName (n, jpName) -> ("列", n, jpName)) }
+                                                   |> Seq.map (fun cd -> ("列", ColumnDef.actualName cd, ColumnDef.jpName cd)) }
                       | _ -> Seq.empty)
     jpNames
     |> Seq.choose (function (x, name, None) -> Some { Level = level; Message = sprintf "日本語名を持たない%sがあります: %s" x name } | _ -> None)
@@ -96,7 +92,7 @@ module TableSummary =
   let check (level: RuleLevel) (_arg: string) (elems: Element list) : DetectedItem list =
     let summaries =
       elems
-      |> Seq.collect (function TableDef t -> seq { yield (t.TableName, t.TableSummary) } | _ -> Seq.empty)
+      |> Seq.collect (function TableDef t -> seq { yield (t.TableDefName, t.TableDefSummary) } | _ -> Seq.empty)
     summaries
     |> Seq.choose (function (name, None) -> Some { Level = level; Message = sprintf "サマリを持たないテーブルがあります: %s" name } | _ -> None)
     |> Seq.toList

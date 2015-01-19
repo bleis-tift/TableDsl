@@ -75,38 +75,27 @@ module Printer =
   open System.IO
   open System.Text
 
-  let printColumnTypeName (typ: ColumnTypeRef) =
-    let rootType =
-      match typ.Type with
-      | NonEnum t -> t.RootType
-      | Enum (t, _) -> t.RootType
-    let attrs = typ.AllAttrbutes
+  let printColumnTypeName (colDef: ColumnDef) =
+    let rootType = ColumnDef.rootTypeName colDef
+    let attrs = ColumnDef.attributes colDef
     let identity =
-      match attrs |> Seq.tryFind (fun a -> a.Key = "identity") with Some _ -> " IDENTITY(1, 1)" | _ -> ""
+      match attrs |> Seq.tryFind (Attribute.key >> (=)"identity") with Some _ -> " IDENTITY(1, 1)" | _ -> ""
     let collate =
-      match attrs |> Seq.tryFind (fun a -> a.Key = "collate") with Some (ComplexAttr (_, [c])) -> " COLLATE " + c | _ -> ""
-    rootType + identity + collate + (if typ.IsNullable then " NULL" else " NOT NULL")
+      match attrs |> Seq.tryFind (Attribute.key >> (=)"collate") with Some (ComplexAttr (_, [c])) -> " COLLATE " + c | _ -> ""
+    rootType + identity + collate + (if ColumnDef.isNullable colDef then " NULL" else " NOT NULL")
 
   let printColumnDef col =
-    let typ = col.ColumnType
-    let name =
-      match col.ColumnName with
-      | ColumnName (name, _) -> name
-      | Wildcard -> typ.ColumnTypeRefName
-    "[" + name + "] " + (printColumnTypeName typ)
+    let name = ColumnDef.actualName col
+    "[" + name + "] " + (printColumnTypeName col)
 
   let printCreateTable table =
-    "CREATE TABLE [" + table.TableName + "] (\n"
+    "CREATE TABLE [" + table.TableDefName + "] (\n"
       + "    " + (table.ColumnDefs |> List.map printColumnDef |> Str.join "\n  , ")
       + "\n);"
 
   let attrs colDef =
-    let typ = colDef.ColumnType
-    let colName =
-      match colDef.ColumnName with
-      | Wildcard -> typ.ColumnTypeRefName
-      | ColumnName (name, _) -> name
-    typ.AllAttrbutes |> Seq.map (fun a -> (colName, a))
+    let colName = ColumnDef.actualName colDef
+    colDef |> ColumnDef.attributes |> Seq.map (fun a -> (colName, a))
 
   let indexInfo defaultInfo (value: string) =
     let int str =
@@ -192,24 +181,24 @@ module Printer =
     let alters =
       tableDef.ColumnDefs
       |> Seq.collect attrs
-      |> Seq.fold (addAlter tableDef.TableName) []
+      |> Seq.fold (addAlter tableDef.TableDefName) []
 
     alters
     |> List.map (fun (key, cols) ->
         match key with
         | PrimaryKey (clusteredType, name) ->
-            "ALTER TABLE [" + tableDef.TableName + "] ADD CONSTRAINT [" + name + "] PRIMARY KEY " + (string clusteredType) + " (\n" + (printPKCols cols) + "\n);"
+            "ALTER TABLE [" + tableDef.TableDefName + "] ADD CONSTRAINT [" + name + "] PRIMARY KEY " + (string clusteredType) + " (\n" + (printPKCols cols) + "\n);"
         | ForeignKey (name, parentTable) ->
-            "ALTER TABLE [" + tableDef.TableName + "] ADD CONSTRAINT [" + name + "] FOREIGN KEY (\n" +
+            "ALTER TABLE [" + tableDef.TableDefName + "] ADD CONSTRAINT [" + name + "] FOREIGN KEY (\n" +
               (printFKOwnCols cols) + "\n) REFERENCES [" + parentTable + "] (\n" +
               (printFKParentCols cols) + "\n) ON UPDATE NO ACTION\n  ON DELETE NO ACTION;"
         | UniqueKey (clusteredType, name) ->
-            "ALTER TABLE [" + tableDef.TableName + "] ADD CONSTRAINT [" + name + "] UNIQUE " + (string clusteredType) + " (\n" + (printUQCols cols) + "\n);"
+            "ALTER TABLE [" + tableDef.TableDefName + "] ADD CONSTRAINT [" + name + "] UNIQUE " + (string clusteredType) + " (\n" + (printUQCols cols) + "\n);"
         | Index (clusteredType, name) ->
-            "CREATE " + (string clusteredType) + " INDEX [" + name + "] ON [" + tableDef.TableName + "] (\n" + (printIXCols cols) + "\n);"
+            "CREATE " + (string clusteredType) + " INDEX [" + name + "] ON [" + tableDef.TableDefName + "] (\n" + (printIXCols cols) + "\n);"
         | Default name ->
             let col, value = cols |> List.map (fun (DefaultCol (c, v)) -> (c, v)) |> List.head
-            "ALTER TABLE [" + tableDef.TableName + "] ADD CONSTRAINT [" + name + "] DEFAULT (" + value + ") FOR [" + col + "];"
+            "ALTER TABLE [" + tableDef.TableDefName + "] ADD CONSTRAINT [" + name + "] DEFAULT (" + value + ") FOR [" + col + "];"
        )
 
   let printSummaryAndJpName _tableDef =

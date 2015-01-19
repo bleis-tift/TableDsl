@@ -3,6 +3,7 @@
 open Basis.Core
 open FParsec
 open TableDsl
+open TableDsl.Extensions
 open TableDsl.Parser
 open TableDsl.Parser.Types
 open TableDsl.Parser.Primitives
@@ -170,11 +171,11 @@ module internal Impl =
                    | SimpleColAttr k -> SimpleAttr k
                    | ComplexColAttr (k, v) -> ComplexAttr (k, [v |> List.map (function Lit l -> l) |> String.concat ""]))
     return {
-      Type = TypeInfo.FromColumnTypeDef(typeDef)
+      Ref = ColumnTypeRefKind.FromColumnTypeDef(typeDef)
       IsNullable = nullable
-      ColumnTypeRefName = typeDef.TypeName
-      ColumnTypeRefParams = typeDef.Params |> List.map (function BoundValue v -> v)
-      ColumnTypeRefAttributes = attrs
+      ColumnTypeName = typeDef.TypeName
+      ColumnTypeParams = typeDef.Params |> List.map (function BoundValue v -> v)
+      ColumnTypeAttributes = attrs
     }
   }
 
@@ -235,9 +236,9 @@ module internal Impl =
       if colName = "_" then preturn None else pJpNameOpt
     do! pSkipToken ":"
     let! colType = pClosedTypeRef
-    return { ColumnSummary = colSummary
-             ColumnName = if colName = "_" then Wildcard else ColumnName (colName, colJpName)
-             ColumnType = colType }
+    return { ColumnDefSummary = colSummary
+             ColumnDefName = if colName = "_" then Wildcard else ColumnName (colName, colJpName)
+             ColumnDefType = colType }
   }
 
   let pTableComplexAttr = parse {
@@ -271,10 +272,10 @@ module internal Impl =
     let! colDefs =
       sepEndBy (attempt pColumnDef) newline
       |> between (pSkipOnelineToken "{") (pSkipOnelineToken "}")
-    return TableDef { TableSummary = tableSummary
-                      TableAttributes = tableAttributes
-                      TableName = tableName
-                      TableJpName = tableJpName
+    return TableDef { TableDefSummary = tableSummary
+                      TableDefAttributes = tableAttributes
+                      TableDefName = tableName
+                      TableDefJpName = tableJpName
                       ColumnDefs = colDefs }
   }
 

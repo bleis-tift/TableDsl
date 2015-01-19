@@ -222,31 +222,31 @@ module ParserTest =
       """
       |> parse
       |> should equal
-           [ { TableSummary = None
-               TableAttributes = []
-               TableName = "Users"
-               TableJpName = None
+           [ { TableDefSummary = None
+               TableDefAttributes = []
+               TableDefName = "Users"
+               TableDefJpName = None
                ColumnDefs =
-                 [ { ColumnSummary = None
-                     ColumnName = ColumnName ("Id", None)
-                     ColumnType = { Type = NonEnum { RootType = "int"
-                                                     ColumnTypeSummary = None
-                                                     ColumnTypeJpName = None
-                                                     ColumnTypeAttributes = [] }
-                                    IsNullable = false
-                                    ColumnTypeRefName = "int"
-                                    ColumnTypeRefParams = []
-                                    ColumnTypeRefAttributes = [] } }
-                   { ColumnSummary = None
-                     ColumnName = ColumnName ("Name", None)
-                     ColumnType = { Type = NonEnum { RootType = "nvarchar(16)"
-                                                     ColumnTypeSummary = None
-                                                     ColumnTypeJpName = None
-                                                     ColumnTypeAttributes = [] }
-                                    IsNullable = false
-                                    ColumnTypeRefName = "nvarchar"
-                                    ColumnTypeRefParams = ["16"]
-                                    ColumnTypeRefAttributes = [] } } ]
+                 [ { ColumnDefSummary = None
+                     ColumnDefName = ColumnName ("Id", None)
+                     ColumnDefType = { Ref = NonEnum { RootType = "int"
+                                                       ColumnTypeRefSummary = None
+                                                       ColumnTypeRefJpName = None
+                                                       ColumnTypeRefAttributes = [] }
+                                       IsNullable = false
+                                       ColumnTypeName = "int"
+                                       ColumnTypeParams = []
+                                       ColumnTypeAttributes = [] } }
+                   { ColumnDefSummary = None
+                     ColumnDefName = ColumnName ("Name", None)
+                     ColumnDefType = { Ref = NonEnum { RootType = "nvarchar(16)"
+                                                       ColumnTypeRefSummary = None
+                                                       ColumnTypeRefJpName = None
+                                                       ColumnTypeRefAttributes = [] }
+                                       IsNullable = false
+                                       ColumnTypeName = "nvarchar"
+                                       ColumnTypeParams = ["16"]
+                                       ColumnTypeAttributes = [] } } ]
              }
            ]
 
@@ -264,57 +264,57 @@ module ParserTest =
       """
       |> parse
       |> should equal
-           [ { TableSummary = None
-               TableAttributes = []
-               TableName = "Users"
-               TableJpName = None
+           [ { TableDefSummary = None
+               TableDefAttributes = []
+               TableDefName = "Users"
+               TableDefJpName = None
                ColumnDefs =
-                 [ { ColumnSummary = None
-                     ColumnName = ColumnName ("Id", None)
-                     ColumnType = { Type = NonEnum { RootType = "int"
-                                                     ColumnTypeSummary = None
-                                                     ColumnTypeJpName = None
-                                                     ColumnTypeAttributes = [] }
-                                    IsNullable = false
-                                    ColumnTypeRefName = "int"
-                                    ColumnTypeRefParams = []
-                                    ColumnTypeRefAttributes = [] } }
-                   { ColumnSummary = None
-                     ColumnName = ColumnName ("Name", None)
-                     ColumnType = { Type = NonEnum { RootType = "nvarchar(16)"
-                                                     ColumnTypeSummary = None
-                                                     ColumnTypeJpName = None
-                                                     ColumnTypeAttributes = [] }
-                                    IsNullable = false
-                                    ColumnTypeRefName = "nvarchar"
-                                    ColumnTypeRefParams = ["16"]
-                                    ColumnTypeRefAttributes = [] } } ]
+                 [ { ColumnDefSummary = None
+                     ColumnDefName = ColumnName ("Id", None)
+                     ColumnDefType = { Ref = NonEnum { RootType = "int"
+                                                       ColumnTypeRefSummary = None
+                                                       ColumnTypeRefJpName = None
+                                                       ColumnTypeRefAttributes = [] }
+                                       IsNullable = false
+                                       ColumnTypeName = "int"
+                                       ColumnTypeParams = []
+                                       ColumnTypeAttributes = [] } }
+                   { ColumnDefSummary = None
+                     ColumnDefName = ColumnName ("Name", None)
+                     ColumnDefType = { Ref = NonEnum { RootType = "nvarchar(16)"
+                                                       ColumnTypeRefSummary = None
+                                                       ColumnTypeRefJpName = None
+                                                       ColumnTypeRefAttributes = [] }
+                                       IsNullable = false
+                                       ColumnTypeName = "nvarchar"
+                                       ColumnTypeParams = ["16"]
+                                       ColumnTypeAttributes = [] } } ]
              }
-             { TableSummary = None
-               TableAttributes = []
-               TableName = "DeletedUsers"
-               TableJpName = None
+             { TableDefSummary = None
+               TableDefAttributes = []
+               TableDefName = "DeletedUsers"
+               TableDefJpName = None
                ColumnDefs =
-                 [ { ColumnSummary = None
-                     ColumnName = ColumnName ("Id", None)
-                     ColumnType = { Type = NonEnum { RootType = "int"
-                                                     ColumnTypeSummary = None
-                                                     ColumnTypeJpName = None
-                                                     ColumnTypeAttributes = [] }
-                                    IsNullable = false
-                                    ColumnTypeRefName = "int"
-                                    ColumnTypeRefParams = []
-                                    ColumnTypeRefAttributes = [] } }
-                   { ColumnSummary = None
-                     ColumnName = ColumnName ("UserId", None)
-                     ColumnType = { Type = NonEnum { RootType = "int"
-                                                     ColumnTypeSummary = None
-                                                     ColumnTypeJpName = None
-                                                     ColumnTypeAttributes = [] }
-                                    IsNullable = false
-                                    ColumnTypeRefName = "int"
-                                    ColumnTypeRefParams = []
-                                    ColumnTypeRefAttributes = [] } } ] }
+                 [ { ColumnDefSummary = None
+                     ColumnDefName = ColumnName ("Id", None)
+                     ColumnDefType = { Ref = NonEnum { RootType = "int"
+                                                       ColumnTypeRefSummary = None
+                                                       ColumnTypeRefJpName = None
+                                                       ColumnTypeRefAttributes = [] }
+                                       IsNullable = false
+                                       ColumnTypeName = "int"
+                                       ColumnTypeParams = []
+                                       ColumnTypeAttributes = [] } }
+                   { ColumnDefSummary = None
+                     ColumnDefName = ColumnName ("UserId", None)
+                     ColumnDefType = { Ref = NonEnum { RootType = "int"
+                                                       ColumnTypeRefSummary = None
+                                                       ColumnTypeRefJpName = None
+                                                       ColumnTypeRefAttributes = [] }
+                                       IsNullable = false
+                                       ColumnTypeName = "int"
+                                       ColumnTypeParams = []
+                                       ColumnTypeAttributes = [] } } ] }
            ]
 
     [<Test>]
@@ -326,21 +326,21 @@ module ParserTest =
       """
       |> parse
       |> should equal
-           [ { TableSummary = None
-               TableAttributes = []
-               TableName = "Users"
-               TableJpName = None
+           [ { TableDefSummary = None
+               TableDefAttributes = []
+               TableDefName = "Users"
+               TableDefJpName = None
                ColumnDefs =
-                 [ { ColumnSummary = None
-                     ColumnName = ColumnName ("Id", None)
-                     ColumnType = { Type = NonEnum { RootType = "uniqueidentifier"
-                                                     ColumnTypeSummary = None
-                                                     ColumnTypeJpName = None
-                                                     ColumnTypeAttributes = [] }
-                                    IsNullable = false
-                                    ColumnTypeRefName = "uniqueidentifier"
-                                    ColumnTypeRefParams = []
-                                    ColumnTypeRefAttributes = [SimpleAttr "PK"] } } ]
+                 [ { ColumnDefSummary = None
+                     ColumnDefName = ColumnName ("Id", None)
+                     ColumnDefType = { Ref = NonEnum { RootType = "uniqueidentifier"
+                                                       ColumnTypeRefSummary = None
+                                                       ColumnTypeRefJpName = None
+                                                       ColumnTypeRefAttributes = [] }
+                                       IsNullable = false
+                                       ColumnTypeName = "uniqueidentifier"
+                                       ColumnTypeParams = []
+                                       ColumnTypeAttributes = [SimpleAttr "PK"] } } ]
              }
            ]
 
@@ -353,21 +353,21 @@ module ParserTest =
       """
       |> parse
       |> should equal
-           [ { TableSummary = None
-               TableAttributes = []
-               TableName = "Users"
-               TableJpName = None
+           [ { TableDefSummary = None
+               TableDefAttributes = []
+               TableDefName = "Users"
+               TableDefJpName = None
                ColumnDefs =
-                 [ { ColumnSummary = None
-                     ColumnName = ColumnName ("Id", None)
-                     ColumnType = { Type = NonEnum { RootType = "uniqueidentifier"
-                                                     ColumnTypeSummary = None
-                                                     ColumnTypeJpName = None
-                                                     ColumnTypeAttributes = [] }
-                                    IsNullable = false
-                                    ColumnTypeRefName = "uniqueidentifier"
-                                    ColumnTypeRefParams = []
-                                    ColumnTypeRefAttributes = [ComplexAttr ("index", ["unclustered.IX1.1"])] } } ]
+                 [ { ColumnDefSummary = None
+                     ColumnDefName = ColumnName ("Id", None)
+                     ColumnDefType = { Ref = NonEnum { RootType = "uniqueidentifier"
+                                                       ColumnTypeRefSummary = None
+                                                       ColumnTypeRefJpName = None
+                                                       ColumnTypeRefAttributes = [] }
+                                       IsNullable = false
+                                       ColumnTypeName = "uniqueidentifier"
+                                       ColumnTypeParams = []
+                                       ColumnTypeAttributes = [ComplexAttr ("index", ["unclustered.IX1.1"])] } } ]
              }
            ]
 
@@ -380,24 +380,24 @@ module ParserTest =
       """
       |> parse
       |> should equal
-           [ { TableSummary = None
-               TableAttributes = []
-               TableName = "Users"
-               TableJpName = None
+           [ { TableDefSummary = None
+               TableDefAttributes = []
+               TableDefName = "Users"
+               TableDefJpName = None
                ColumnDefs =
-                 [ { ColumnSummary = None
-                     ColumnName = ColumnName ("Id", None)
-                     ColumnType = { Type = NonEnum { RootType = "uniqueidentifier"
-                                                     ColumnTypeSummary = None
-                                                     ColumnTypeJpName = None
-                                                     ColumnTypeAttributes = [] }
-                                    IsNullable = false
-                                    ColumnTypeRefName = "uniqueidentifier"
-                                    ColumnTypeRefParams = []
-                                    ColumnTypeRefAttributes =
-                                      [ComplexAttr ("PK", ["unclustered"])
-                                       ComplexAttr ("index", ["clustered.IX1.1"])
-                                       SimpleAttr "unique"] } } ]
+                 [ { ColumnDefSummary = None
+                     ColumnDefName = ColumnName ("Id", None)
+                     ColumnDefType = { Ref = NonEnum { RootType = "uniqueidentifier"
+                                                       ColumnTypeRefSummary = None
+                                                       ColumnTypeRefJpName = None
+                                                       ColumnTypeRefAttributes = [] }
+                                       IsNullable = false
+                                       ColumnTypeName = "uniqueidentifier"
+                                       ColumnTypeParams = []
+                                       ColumnTypeAttributes =
+                                         [ComplexAttr ("PK", ["unclustered"])
+                                          ComplexAttr ("index", ["clustered.IX1.1"])
+                                          SimpleAttr "unique"] } } ]
              }
            ]
 
@@ -410,21 +410,21 @@ module ParserTest =
       """
       |> parse
       |> should equal
-           [ { TableSummary = None
-               TableAttributes = []
-               TableName = "Users"
-               TableJpName = None
+           [ { TableDefSummary = None
+               TableDefAttributes = []
+               TableDefName = "Users"
+               TableDefJpName = None
                ColumnDefs =
-                 [ { ColumnSummary = None
-                     ColumnName = Wildcard
-                     ColumnType = { Type = NonEnum { RootType = "datetime2"
-                                                     ColumnTypeSummary = None
-                                                     ColumnTypeJpName = None
-                                                     ColumnTypeAttributes = [] }
-                                    IsNullable = false
-                                    ColumnTypeRefName = "datetime2"
-                                    ColumnTypeRefParams = []
-                                    ColumnTypeRefAttributes = [] } } ] } ]
+                 [ { ColumnDefSummary = None
+                     ColumnDefName = Wildcard
+                     ColumnDefType = { Ref = NonEnum { RootType = "datetime2"
+                                                       ColumnTypeRefSummary = None
+                                                       ColumnTypeRefJpName = None
+                                                       ColumnTypeRefAttributes = [] }
+                                       IsNullable = false
+                                       ColumnTypeName = "datetime2"
+                                       ColumnTypeParams = []
+                                       ColumnTypeAttributes = [] } } ] } ]
 
     [<Test>]
     let ``nullable type`` () =
@@ -437,41 +437,41 @@ module ParserTest =
       """
       |> parse
       |> should equal
-           [ { TableSummary = None
-               TableAttributes = []
-               TableName = "Users"
-               TableJpName = None
+           [ { TableDefSummary = None
+               TableDefAttributes = []
+               TableDefName = "Users"
+               TableDefJpName = None
                ColumnDefs =
-                 [ { ColumnSummary = None
-                     ColumnName = ColumnName ("Id", None)
-                     ColumnType = { Type = NonEnum { RootType = "int"
-                                                     ColumnTypeSummary = None
-                                                     ColumnTypeJpName = None
-                                                     ColumnTypeAttributes = [] }
-                                    IsNullable = false
-                                    ColumnTypeRefName = "int"
-                                    ColumnTypeRefParams = []
-                                    ColumnTypeRefAttributes = [] } }
-                   { ColumnSummary = None
-                     ColumnName = ColumnName ("Name", None)
-                     ColumnType = { Type = NonEnum { RootType = "nvarchar(16)"
-                                                     ColumnTypeSummary = None
-                                                     ColumnTypeJpName = None
-                                                     ColumnTypeAttributes = [] }
-                                    IsNullable = true
-                                    ColumnTypeRefName = "nvarchar"
-                                    ColumnTypeRefParams = ["16"]
-                                    ColumnTypeRefAttributes = [] } }
-                   { ColumnSummary = None
-                     ColumnName = ColumnName ("Age", None)
-                     ColumnType = { Type = NonEnum { RootType = "int"
-                                                     ColumnTypeSummary = None
-                                                     ColumnTypeJpName = None
-                                                     ColumnTypeAttributes = [] }
-                                    IsNullable = true
-                                    ColumnTypeRefName = "int"
-                                    ColumnTypeRefParams = []
-                                    ColumnTypeRefAttributes = [] } } ]
+                 [ { ColumnDefSummary = None
+                     ColumnDefName = ColumnName ("Id", None)
+                     ColumnDefType = { Ref = NonEnum { RootType = "int"
+                                                       ColumnTypeRefSummary = None
+                                                       ColumnTypeRefJpName = None
+                                                       ColumnTypeRefAttributes = [] }
+                                       IsNullable = false
+                                       ColumnTypeName = "int"
+                                       ColumnTypeParams = []
+                                       ColumnTypeAttributes = [] } }
+                   { ColumnDefSummary = None
+                     ColumnDefName = ColumnName ("Name", None)
+                     ColumnDefType = { Ref = NonEnum { RootType = "nvarchar(16)"
+                                                       ColumnTypeRefSummary = None
+                                                       ColumnTypeRefJpName = None
+                                                       ColumnTypeRefAttributes = [] }
+                                       IsNullable = true
+                                       ColumnTypeName = "nvarchar"
+                                       ColumnTypeParams = ["16"]
+                                       ColumnTypeAttributes = [] } }
+                   { ColumnDefSummary = None
+                     ColumnDefName = ColumnName ("Age", None)
+                     ColumnDefType = { Ref = NonEnum { RootType = "int"
+                                                       ColumnTypeRefSummary = None
+                                                       ColumnTypeRefJpName = None
+                                                       ColumnTypeRefAttributes = [] }
+                                       IsNullable = true
+                                       ColumnTypeName = "int"
+                                       ColumnTypeParams = []
+                                       ColumnTypeAttributes = [] } } ]
              }
            ]
 
@@ -489,31 +489,31 @@ module ParserTest =
       """
       |> parse
       |> should equal
-           [ { TableSummary = Some "ユーザテーブル\nユーザを表す。"
-               TableAttributes = []
-               TableName = "Users"
-               TableJpName = Some "ユーザテーブル"
+           [ { TableDefSummary = Some "ユーザテーブル\nユーザを表す。"
+               TableDefAttributes = []
+               TableDefName = "Users"
+               TableDefJpName = Some "ユーザテーブル"
                ColumnDefs =
-                 [ { ColumnSummary = Some "ID"
-                     ColumnName = ColumnName ("Id", Some "ID")
-                     ColumnType = { Type = NonEnum { RootType = "int"
-                                                     ColumnTypeSummary = None
-                                                     ColumnTypeJpName = None
-                                                     ColumnTypeAttributes = [] }
-                                    IsNullable = false
-                                    ColumnTypeRefName = "int"
-                                    ColumnTypeRefParams = []
-                                    ColumnTypeRefAttributes = [] } }
-                   { ColumnSummary = Some "ユーザ名"
-                     ColumnName = ColumnName ("Name", Some "名前")
-                     ColumnType = { Type = NonEnum { RootType = "nvarchar(16)"
-                                                     ColumnTypeSummary = None
-                                                     ColumnTypeJpName = None
-                                                     ColumnTypeAttributes = [] }
-                                    IsNullable = false
-                                    ColumnTypeRefName = "nvarchar"
-                                    ColumnTypeRefParams = ["16"]
-                                    ColumnTypeRefAttributes = [] } } ]
+                 [ { ColumnDefSummary = Some "ID"
+                     ColumnDefName = ColumnName ("Id", Some "ID")
+                     ColumnDefType = { Ref = NonEnum { RootType = "int"
+                                                       ColumnTypeRefSummary = None
+                                                       ColumnTypeRefJpName = None
+                                                       ColumnTypeRefAttributes = [] }
+                                       IsNullable = false
+                                       ColumnTypeName = "int"
+                                       ColumnTypeParams = []
+                                       ColumnTypeAttributes = [] } }
+                   { ColumnDefSummary = Some "ユーザ名"
+                     ColumnDefName = ColumnName ("Name", Some "名前")
+                     ColumnDefType = { Ref = NonEnum { RootType = "nvarchar(16)"
+                                                       ColumnTypeRefSummary = None
+                                                       ColumnTypeRefJpName = None
+                                                       ColumnTypeRefAttributes = [] }
+                                       IsNullable = false
+                                       ColumnTypeName = "nvarchar"
+                                       ColumnTypeParams = ["16"]
+                                       ColumnTypeAttributes = [] } } ]
              }
            ]
 
@@ -541,21 +541,21 @@ module ParserTest =
       }"""
       |> parse
       |> should equal
-           [ { TableSummary = None
-               TableAttributes = [SimpleAttr "Master"]
-               TableName = "Apps"
-               TableJpName = None
+           [ { TableDefSummary = None
+               TableDefAttributes = [SimpleAttr "Master"]
+               TableDefName = "Apps"
+               TableDefJpName = None
                ColumnDefs =
-                 [ { ColumnSummary = None
-                     ColumnName = ColumnName ("Id", None)
-                     ColumnType = { Type = NonEnum { RootType = "int"
-                                                     ColumnTypeSummary = None
-                                                     ColumnTypeJpName = None
-                                                     ColumnTypeAttributes = [] }
-                                    IsNullable = false
-                                    ColumnTypeRefName = "int"
-                                    ColumnTypeRefParams = []
-                                    ColumnTypeRefAttributes = [] } } ]
+                 [ { ColumnDefSummary = None
+                     ColumnDefName = ColumnName ("Id", None)
+                     ColumnDefType = { Ref = NonEnum { RootType = "int"
+                                                       ColumnTypeRefSummary = None
+                                                       ColumnTypeRefJpName = None
+                                                       ColumnTypeRefAttributes = [] }
+                                       IsNullable = false
+                                       ColumnTypeName = "int"
+                                       ColumnTypeParams = []
+                                       ColumnTypeAttributes = [] } } ]
              }
            ]
 
@@ -569,21 +569,21 @@ module ParserTest =
       """
       |> parse
       |> should equal
-           [ { TableSummary = None
-               TableAttributes = [ComplexAttr ("Foo", ["0"; "abcd"])]
-               TableName = "Apps"
-               TableJpName = None
+           [ { TableDefSummary = None
+               TableDefAttributes = [ComplexAttr ("Foo", ["0"; "abcd"])]
+               TableDefName = "Apps"
+               TableDefJpName = None
                ColumnDefs =
-                 [ { ColumnSummary = None
-                     ColumnName = ColumnName ("Id", None)
-                     ColumnType = { Type = NonEnum { RootType = "int"
-                                                     ColumnTypeSummary = None
-                                                     ColumnTypeJpName = None
-                                                     ColumnTypeAttributes = [] }
-                                    IsNullable = false
-                                    ColumnTypeRefName = "int"
-                                    ColumnTypeRefParams = []
-                                    ColumnTypeRefAttributes = [] } } ]
+                 [ { ColumnDefSummary = None
+                     ColumnDefName = ColumnName ("Id", None)
+                     ColumnDefType = { Ref = NonEnum { RootType = "int"
+                                                       ColumnTypeRefSummary = None
+                                                       ColumnTypeRefJpName = None
+                                                       ColumnTypeRefAttributes = [] }
+                                       IsNullable = false
+                                       ColumnTypeName = "int"
+                                       ColumnTypeParams = []
+                                       ColumnTypeAttributes = [] } } ]
              }
            ]
 
@@ -598,21 +598,21 @@ module ParserTest =
       """
       |> parse
       |> should equal
-           [ { TableSummary = None
-               TableAttributes = [SimpleAttr "Master"; ComplexAttr ("Foo", ["0"; "abcd"])]
-               TableName = "Apps"
-               TableJpName = None
+           [ { TableDefSummary = None
+               TableDefAttributes = [SimpleAttr "Master"; ComplexAttr ("Foo", ["0"; "abcd"])]
+               TableDefName = "Apps"
+               TableDefJpName = None
                ColumnDefs =
-                 [ { ColumnSummary = None
-                     ColumnName = ColumnName ("Id", None)
-                     ColumnType = { Type = NonEnum { RootType = "int"
-                                                     ColumnTypeSummary = None
-                                                     ColumnTypeJpName = None
-                                                     ColumnTypeAttributes = [] }
-                                    IsNullable = false
-                                    ColumnTypeRefName = "int"
-                                    ColumnTypeRefParams = []
-                                    ColumnTypeRefAttributes = [] } } ]
+                 [ { ColumnDefSummary = None
+                     ColumnDefName = ColumnName ("Id", None)
+                     ColumnDefType = { Ref = NonEnum { RootType = "int"
+                                                       ColumnTypeRefSummary = None
+                                                       ColumnTypeRefJpName = None
+                                                       ColumnTypeRefAttributes = [] }
+                                       IsNullable = false
+                                       ColumnTypeName = "int"
+                                       ColumnTypeParams = []
+                                       ColumnTypeAttributes = [] } } ]
              }
            ]
     
@@ -645,34 +645,34 @@ module ParserTest =
       |> should equal
             [ ColTypeDef (colDef [TypeVariable "@n"])
               TableDef
-                { TableSummary = Some "ユーザテーブル\nユーザを表す。"
-                  TableAttributes = []
-                  TableName = "Users"
-                  TableJpName = Some "ユーザテーブル"
+                { TableDefSummary = Some "ユーザテーブル\nユーザを表す。"
+                  TableDefAttributes = []
+                  TableDefName = "Users"
+                  TableDefJpName = Some "ユーザテーブル"
                   ColumnDefs = 
                     [
-                      { ColumnSummary = Some "ID" 
-                        ColumnName = ColumnName ("Id", Some "ID")
-                        ColumnType = { Type = NonEnum { RootType = "int"
-                                                        ColumnTypeSummary = None
-                                                        ColumnTypeJpName = None
-                                                        ColumnTypeAttributes = [] }
-                                       IsNullable = false
-                                       ColumnTypeRefName = "int"
-                                       ColumnTypeRefParams = []
-                                       ColumnTypeRefAttributes = [] } }
-                      { ColumnSummary = Some "ユーザ名" 
-                        ColumnName = Wildcard
-                        ColumnType = { Type = NonEnum { RootType = "nvarchar(256)"
-                                                        ColumnTypeSummary = Some "名前を表します。"
-                                                        ColumnTypeJpName = Some "名前"
-                                                        ColumnTypeAttributes =
-                                                          [ComplexAttr ("collate", ["Japanese_BIN"])
-                                                           ComplexAttr ("default", ["42"])] }
-                                       IsNullable = false
-                                       ColumnTypeRefName = "Name"
-                                       ColumnTypeRefParams = ["256"]
-                                       ColumnTypeRefAttributes = [] } }
+                      { ColumnDefSummary = Some "ID" 
+                        ColumnDefName = ColumnName ("Id", Some "ID")
+                        ColumnDefType = { Ref = NonEnum { RootType = "int"
+                                                          ColumnTypeRefSummary = None
+                                                          ColumnTypeRefJpName = None
+                                                          ColumnTypeRefAttributes = [] }
+                                          IsNullable = false
+                                          ColumnTypeName = "int"
+                                          ColumnTypeParams = []
+                                          ColumnTypeAttributes = [] } }
+                      { ColumnDefSummary = Some "ユーザ名" 
+                        ColumnDefName = Wildcard
+                        ColumnDefType = { Ref = NonEnum { RootType = "nvarchar(256)"
+                                                          ColumnTypeRefSummary = Some "名前を表します。"
+                                                          ColumnTypeRefJpName = Some "名前"
+                                                          ColumnTypeRefAttributes =
+                                                             [ ComplexAttr ("collate", ["Japanese_BIN"])
+                                                               ComplexAttr ("default", ["42"]) ] }
+                                          IsNullable = false
+                                          ColumnTypeName = "Name"
+                                          ColumnTypeParams = ["256"]
+                                          ColumnTypeAttributes = [] } }
                     ]
                 }
             ]

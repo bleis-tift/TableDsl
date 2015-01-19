@@ -55,6 +55,8 @@
     <Content Include="packages.config" />
     <Content Include="app.config" />
     <Compile Include="Types.fs" />
+    <Compile Include="Types.Extension.fs" />
+    <Compile Include="Types.Module.fs" />
     <Compile Include="Parser.Types.fs" />
     <Compile Include="Parser.Primitives.fs" />
     <Compile Include="Parser.Impl.fs" />

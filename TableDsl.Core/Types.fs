@@ -4,8 +4,7 @@ type Attribute =
   | SimpleAttr of string
   | ComplexAttr of string * string list
 with
-  member this.Key =
-    match this with SimpleAttr k | ComplexAttr (k, _) -> k
+  override this.ToString() = sprintf "%A" this
  
 type ColumnAttributeValueElem =
   | Lit of string
@@ -25,12 +24,6 @@ type ColumnAttribute =
   | SimpleColAttr of string
   | ComplexColAttr of string * ColumnAttributeValue
 with
-  member this.Key =
-    match this with SimpleColAttr k | ComplexColAttr (k, _) -> k
-  member this.ToAttribute() =
-    match this with
-    | SimpleColAttr k -> SimpleAttr k
-    | ComplexColAttr (k, v) -> ComplexAttr (k, [v |> List.map (function Lit l -> l) |> String.concat ""])
   override this.ToString() = sprintf "%A" this
  
 /// 開いた型パラメータは、型変数か、文字列のいずれか。
@@ -49,12 +42,6 @@ and NonEnumType = {
   TypeParameters: OpenTypeParam list
 }
 with
-  member this.TypeNameWithParams =
-    let paramsStr =
-      if this.TypeParameters.IsEmpty then ""
-      else
-        "(" + (this.TypeParameters |> List.map (function BoundValue p -> p) |> String.concat ", ") + ")"
-    sprintf "%s%s" this.TypeName paramsStr
   override this.ToString() = sprintf "%A" this
 /// 列挙型は基本型とケースを持つ。
 and EnumType = {
@@ -71,25 +58,6 @@ and TypeDef =
   | AliasDef of NonEnumType * originalType: ColumnTypeDef
   | EnumTypeDef of EnumType
 with
-  member this.Summary =
-    match this with
-    | BuiltinType _ | EnumTypeDef _ -> None
-    | AliasDef (_, org) -> org.Summary
-  member this.TypeName =
-    match this with
-    | BuiltinType t -> t.TypeNameWithParams
-    | AliasDef (_, org) -> org.RootTypeName
-    | EnumTypeDef t -> t.BaseType.TypeName
-  member this.JpName =
-    match this with
-    | BuiltinType _ | EnumTypeDef _ -> None
-    | AliasDef (_, org) -> org.JpName
-  member this.Attributes(parentAttrs: ColumnAttribute seq) =
-    match this with
-    | BuiltinType _ | EnumTypeDef _ -> Seq.empty
-    | AliasDef (_, org) ->
-        org.Attributes
-        |> Seq.filter (fun (a: ColumnAttribute) -> parentAttrs |> Seq.forall (fun p -> a.Key <> p.Key))
   override this.ToString() = sprintf "%A" this
 /// 列型定義は、列の型定義と列の属性を持つ。
 /// ただし、トップレベルの列の定義はBuiltinTypeにはならない(組み込み型は定義できない)。
@@ -100,93 +68,46 @@ and ColumnTypeDef = {
   ColumnTypeDefAttributes: ColumnAttribute list
 }
 with
-  member this.Summary =
-    match this.ColumnTypeDefSummary with
-    | Some summary -> Some summary
-    | None -> this.ColumnTypeDef.Summary
-  /// coltype TypeName = ...のTypeName(パラメータを含まない)
-  member this.TypeName =
-    match this.ColumnTypeDef with
-    | BuiltinType t
-    | AliasDef (t, _) -> t.TypeName
-    | EnumTypeDef t -> t.EnumTypeName
-  member this.Params =
-    match this.ColumnTypeDef with
-    | BuiltinType t
-    | AliasDef (t, _) -> t.TypeParameters
-    | EnumTypeDef t -> t.BaseType.TypeParameters
-  member this.RootTypeName =
-    match this.ColumnTypeDef with
-    | BuiltinType t -> t.TypeNameWithParams
-    | AliasDef (_, org) -> org.RootTypeName
-    | EnumTypeDef t -> t.BaseType.TypeNameWithParams
-  member this.JpName =
-    match this.ColumnTypeDefJpName with
-    | Some jpName -> Some jpName
-    | None -> this.ColumnTypeDef.JpName
-  member this.Attributes =
-    seq {
-      let attrs = this.ColumnTypeDefAttributes
-      yield! attrs
-      yield! this.ColumnTypeDef.Attributes(attrs)
-    }
   override this.ToString() = sprintf "%A" this
 
 /// 列の型。ただし、ColumnTypeDefとは違い、ネストが解決された情報を持つ。
-type ColumnType = {
+type ColumnTypeRef = {
   /// 組み込み型を表す文字列
   RootType: string
-  ColumnTypeSummary: Summary option
-  ColumnTypeJpName: string option
+  ColumnTypeRefSummary: Summary option
+  ColumnTypeRefJpName: string option
   /// 列定義で指定されたすべての属性
-  ColumnTypeAttributes: Attribute list
+  ColumnTypeRefAttributes: Attribute list
 }
 with
   static member Create(rootType, summary, jpName, attrs) =
     {
       RootType = rootType
-      ColumnTypeSummary = summary
-      ColumnTypeJpName = jpName
-      ColumnTypeAttributes = attrs
+      ColumnTypeRefSummary = summary
+      ColumnTypeRefJpName = jpName
+      ColumnTypeRefAttributes = attrs
     }
+  override this.ToString() = sprintf "%A" this
 
 /// 非列挙型(NonEnum)と列挙型(Enum)の型情報
-type TypeInfo =
-  | NonEnum of ColumnType
-  | Enum of ColumnType * (string * string option * int) list
+type ColumnTypeRefKind =
+  | NonEnum of ColumnTypeRef
+  | Enum of ColumnTypeRef * (string * string option * int) list
 with
-  static member FromColumnTypeDef(colTypeDef: ColumnTypeDef) =
-    let name = colTypeDef.RootTypeName
-    let summary = colTypeDef.Summary
-    let jpName = colTypeDef.JpName
-    let attrs = colTypeDef.Attributes |> Seq.map (fun a -> a.ToAttribute()) |> Seq.toList
-    match colTypeDef.ColumnTypeDef with
-    | BuiltinType _ -> NonEnum (ColumnType.Create(name, summary, jpName, attrs))
-    | AliasDef (_, org) ->
-        NonEnum (ColumnType.Create(name, summary, jpName, attrs))
-    | EnumTypeDef t -> Enum (ColumnType.Create(name, summary, jpName, attrs), t.Cases)
-  member this.ColumnType =
-    match this with NonEnum t | Enum (t, _) -> t
-  member this.Attributes =
-    this.ColumnType.ColumnTypeAttributes
+  override this.ToString() = sprintf "%A" this
 
-/// 列の型の参照
-type ColumnTypeRef = {
-  Type: TypeInfo
+/// 列の型
+type ColumnType = {
+  Ref: ColumnTypeRefKind
   IsNullable: bool
-  /// 参照名。列定義の名前が指定される場合と、組み込み型の名前が指定される場合がある。
-  ColumnTypeRefName: string
-  ColumnTypeRefParams: string list
-  /// 型の参照時に追加指定される属性(ColName : { type with index })
-  ColumnTypeRefAttributes: Attribute list
+  /// 型名。列定義の名前が指定される場合と、組み込み型の名前が指定される場合がある。型パラメータは含まない。
+  ColumnTypeName: string
+  ColumnTypeParams: string list
+  /// 列の型の指定時に追加指定される属性(ColName : { type with index })
+  ColumnTypeAttributes: Attribute list
 }
 with
-  member this.AllAttrbutes =
-    seq {
-      let attrs = this.ColumnTypeRefAttributes
-      yield! attrs
-      yield! this.Type.Attributes |> Seq.filter (fun a -> attrs |> Seq.forall (fun a2 -> a2.Key <> a.Key))
-    }
+  override this.ToString() = sprintf "%A" this
  
 /// 列名はワイルドカードか、名前を持ったもののいずれか。
 type ColumnName =
@@ -197,19 +118,19 @@ with
  
 /// 列定義
 type ColumnDef = {
-  ColumnSummary: Summary option
-  ColumnName: ColumnName
-  ColumnType: ColumnTypeRef
+  ColumnDefSummary: Summary option
+  ColumnDefName: ColumnName
+  ColumnDefType: ColumnType
 }
 with
   override this.ToString() = sprintf "%A" this
  
 /// テーブル定義
 type TableDef = {
-  TableSummary: Summary option
-  TableAttributes: Attribute list
-  TableName: string
-  TableJpName: string option
+  TableDefSummary: Summary option
+  TableDefAttributes: Attribute list
+  TableDefName: string
+  TableDefJpName: string option
   ColumnDefs: ColumnDef list
 }
 with
