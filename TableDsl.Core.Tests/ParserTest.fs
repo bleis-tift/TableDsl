@@ -166,35 +166,6 @@ module ParserTest =
                           ColumnTypeDefSummary = Some "名前を表します。"
                           ColumnTypeDefJpName = Some "名前" } ]
 
-    [<Test>]
-    let ``dup type variable`` () =
-      "coltype nvarchar(@n, @n) = { nvarchar(@n) with collate = Japanese_BIN }"
-      |> tryParse
-      |> function
-         | Success res -> failwithf "oops! Success! : %A" res
-         | Failure (FParsecDefaultMessage err) -> failwithf "oops! : %s" err
-         | Failure (UserFriendlyMessages errs) -> errs |> List.map (fun (_, _, msg) -> msg) |> should equal ["型nvarcharの定義で型変数@nが重複しています。"]
-
-    [<Test>]
-    let ``can't inherit enum type`` () =
-      """
-      coltype Platform =
-        | iOS = 1
-        | Android = 2
-      based { int with default = 1 }
-      
-      coltype Platform2 =
-        | WP = 3
-      based Platform"""
-      |> tryParse
-      |> function
-         | Success res -> failwithf "oops! Success! : %A" res
-         | Failure (FParsecDefaultMessage err) -> failwithf "oops! : %s" err
-         | Failure (UserFriendlyMessages errs) -> 
-            errs 
-            |> List.map (fun (_, _, msg) -> msg) 
-            |> should equal ["列挙型の定義(Platform2)の基底型には組み込み型しか指定できませんが、他の列挙型(Platform)が指定されました。"]
-
   module TableDef =
     let builtin1 name _1 =
       { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [BoundValue _1] }
@@ -517,21 +488,6 @@ module ParserTest =
              }
            ]
 
-    let errMsg (lines: string list) = System.String.Join("\r\n", lines)
-
-    [<Test>]
-    let ``type not found`` () =
-      """
-      table Users = {
-        Name: string
-      }
-      """
-      |> tryParse
-      |> function
-         | Success res -> failwithf "oops! Success! : %A" res
-         | Failure (FParsecDefaultMessage err) -> failwithf "oops! : %s" err
-         | Failure (UserFriendlyMessages errs) -> errs |> List.map (fun (_, _, msg) -> msg) |> should equal ["stringという型が見つかりませんでした。"]
-
     [<Test>]
     let ``simple table attr`` () =
       """
@@ -676,22 +632,3 @@ module ParserTest =
                     ]
                 }
             ]
-
-    [<Test>]
-    let ``alias def in the enum based def`` () =
-      """
-      coltype foo = int
-      coltype Platform =
-        | iOS = 1
-        | Android = 2
-      based { foo with default = 1 }
-      """
-      |> Parser.tryParse
-      |> Result.map (fst >> List.choose (function TableDef def -> Some def | _ -> None))
-      |> function
-         | Success res -> failwithf "oops... expected is failure but success : %A" res
-         | Failure (FParsecDefaultMessage err) -> failwithf "oops... : %s" err
-         | Failure (UserFriendlyMessages errs) -> 
-            errs 
-            |> List.map (fun (_, _, msg) -> msg) 
-            |> should equal ["列挙型の定義(Platform)の基底型には組み込み型しか指定できませんが、列定義(foo)が指定されました。"] 
