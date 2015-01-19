@@ -32,7 +32,7 @@ with
   override this.ToString() =
     match this with
     | Asc -> "ASC"
-    | Desc -> "Desc"
+    | Desc -> "DESC"
 
 type IndexInfo = {
   ClusteredType: ClusteredType
