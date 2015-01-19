@@ -96,3 +96,62 @@ module TableSummary =
     summaries
     |> Seq.choose (function (name, None) -> Some { Level = level; Message = sprintf "サマリを持たないテーブルがあります: %s" name } | _ -> None)
     |> Seq.toList
+
+[<RuleCheckerPlugin("invalid-prefix", RuleLevel.Fatal, "")>]
+module InvalidPrefix =
+  let prefix value =
+    match value |> Str.splitBy "." with
+    | [| "clustered"; "asc" |] | [| "clustered"; "desc" |] -> None
+    | [| "clustered"; keyNamePrefix |]
+    | [| "clustered"; keyNamePrefix; _ |]
+    | [| "clustered"; keyNamePrefix; _; "asc" |]
+    | [| "clustered"; keyNamePrefix; _; "desc" |] -> Some keyNamePrefix
+    | [| "nonclustered"; "asc" |] | [| "nonclustered"; "desc" |] -> None
+    | [| "nonclustered"; keyNamePrefix |]
+    | [| "nonclustered"; keyNamePrefix; _ |]
+    | [| "nonclustered"; keyNamePrefix; _; "asc" |]
+    | [| "nonclustered"; keyNamePrefix; _; "desc" |] -> Some keyNamePrefix
+    | [| "asc" |] | [| "desc" |] -> None
+    | [| keyNamePrefix |]
+    | [| keyNamePrefix; _ |]
+    | [| keyNamePrefix; _; "asc" |]
+    | [| keyNamePrefix; _; "desc" |] -> Some keyNamePrefix
+    | _ -> None
+
+  let prefixForFK value =
+    match value |> Str.splitBy "." with
+    | [| keyNamePrefix; _; _ |]
+    | [| keyNamePrefix; _; _; _ |] -> Some keyNamePrefix
+    | _ -> None
+
+  let invalidPrimaryKeyPrefix value = prefix value |> Option.bind (fun prefix -> if prefix |> Str.startsWith "PK" then None else Some prefix)
+  let invalidForeignKeyPrefix value = prefixForFK value |> Option.bind (fun prefix -> if prefix |> Str.startsWith "FK" then None else Some prefix)
+  let invalidUniqueKeyPrefix value = prefix value |> Option.bind (fun prefix -> if prefix |> Str.startsWith "UQ" then None else Some prefix)
+  let invalidIndexPrefix value = prefix value |> Option.bind (fun prefix -> if prefix |> Str.startsWith "IX" then None else Some prefix)
+
+  let check (_level: RuleLevel) (_arg: string) (elems: Element list) : DetectedItem list =
+    let indexInfos =
+      seq {
+        for table in elems |> List.choose (function TableDef t -> Some t | _ -> None) do
+          for col in table.ColumnDefs do
+            for attr in col |> ColumnDef.attributes do
+              match attr with
+              | ComplexAttr (key, [value]) -> yield (table.TableDefName, ColumnDef.actualName col, key, value)
+              | _ -> ()
+      }
+    let invalidPrefixIndexInfos =
+      indexInfos
+      |> Seq.choose (function
+                     | (table, col, "PK", value) -> match invalidPrimaryKeyPrefix value with Some p -> Some (table, col, "PK", p) | _ -> None
+                     | (table, col, "FK", value) -> match invalidForeignKeyPrefix value with Some p -> Some (table, col, "FK", p) | _ -> None
+                     | (table, col, "unique", value) -> match invalidUniqueKeyPrefix value with Some p -> Some (table, col, "unique", p) | _ -> None
+                     | (table, col, "index", value) -> match invalidIndexPrefix value with Some p -> Some (table, col, "index", p) | _ -> None
+                     | _ -> None)
+    invalidPrefixIndexInfos
+    |> Seq.map (function
+                | (table, col, "PK", value) -> { Level = RuleLevel.Fatal; Message = sprintf "主キーのプレフィックスはPKですが、%sが指定されました: %s.%s" value table col }
+                | (table, col, "FK", value) -> { Level = RuleLevel.Fatal; Message = sprintf "外部キーのプレフィックスはFKですが、%sが指定されました: %s.%s" value table col }
+                | (table, col, "unique", value) -> { Level = RuleLevel.Fatal; Message = sprintf "一意制約のプレフィックスはUQですが、%sが指定されました: %s.%s" value table col }
+                | (table, col, "index", value) -> { Level = RuleLevel.Fatal; Message = sprintf "インデックスのプレフィックスはIXですが、%sが指定されました: %s.%s" value table col }
+                | other -> failwithf "oops!: %A" other)
+    |> Seq.toList
