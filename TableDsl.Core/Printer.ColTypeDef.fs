@@ -5,10 +5,10 @@ open TableDsl
 open TableDsl.Printer.Primitives
 
 module internal ColTypeDef =
-  let rec printNonEnumTypeName (nonEnumType: NonEnumType) =
-    nonEnumType.TypeName + (printOpenTypeParams (printColumnTypeDef []) nonEnumType.TypeParameters)
+  let printNonEnumTypeName (nonEnumType: NonEnumType) =
+    nonEnumType.TypeName + (printOpenTypeParams nonEnumType.TypeParameters)
 
-  and printColumnTypeDef attrs col =
+  let printColumnTypeDef attrs col =
     " " +
       match col.ColumnTypeDef with
       | BuiltinType typ -> printAttributes (printNonEnumTypeName typ) attrs

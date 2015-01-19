@@ -16,10 +16,6 @@ module ParserTest =
   let builtinTypeDef0 name =
     { TypeName = name; TypeParameters = [] }
 
-  let boundNullable typ =
-    { ColumnTypeDef = BuiltinType { TypeName = "nullable"; TypeParameters = [BoundType typ] }
-      ColumnTypeDefAttributes = []; ColumnTypeDefSummary = None; ColumnTypeDefJpName = None}
-
   [<Test>]
   let ``empty string`` () =
     ""
@@ -200,9 +196,6 @@ module ParserTest =
             |> should equal ["列挙型の定義(Platform2)の基底型には組み込み型しか指定できませんが、他の列挙型(Platform)が指定されました。"]
 
   module TableDef =
-    let nullable typ =
-      { ColumnTypeDef = BuiltinType { TypeName = "nullable"; TypeParameters = [BoundType typ] }
-        ColumnTypeDefAttributes = []; ColumnTypeDefSummary = None; ColumnTypeDefJpName = None }
     let builtin1 name _1 =
       { ColumnTypeDef = BuiltinType { TypeName = name; TypeParameters = [BoundValue _1] }
         ColumnTypeDefAttributes = []; ColumnTypeDefSummary = None; ColumnTypeDefJpName = None}

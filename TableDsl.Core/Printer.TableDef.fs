@@ -15,17 +15,10 @@ module TableDef =
 
   let printNullable typ = "nullable(" + typ + ")"
 
-  let rec printNonEnumTypeName (nonEnumType: NonEnumType) =
+  let printNonEnumTypeName (nonEnumType: NonEnumType) =
     match nonEnumType.TypeParameters with
     | [] -> nonEnumType.TypeName
-    | _other -> nonEnumType.TypeName + (printOpenTypeParams (printColumnTypeDef []) nonEnumType.TypeParameters)
-
-  and printColumnTypeDef attrs col =
-    " " +
-      match col.ColumnTypeDef with
-      | BuiltinType typ -> printAttributes (printNonEnumTypeName typ) attrs
-      | AliasDef (typ, _originalType) -> printAttributes (printNonEnumTypeName typ) attrs
-      | EnumTypeDef typ -> printAttributes typ.EnumTypeName attrs
+    | _other -> nonEnumType.TypeName + (printOpenTypeParams nonEnumType.TypeParameters)
 
   let printColumnTypeRef (col: ColumnTypeRef) =
     let typ =

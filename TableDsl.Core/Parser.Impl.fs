@@ -30,17 +30,23 @@ module internal Impl =
     do! pSkipOnelineToken "("
     let! typ, _ = pOpenTypeRefWithoutAttributes
     do! pSkipOnelineToken ")"
-    return [BoundType typ]
+    return typ
   }
 
   let pOpenTypeParamElem =
     pTypeVariableName |>> TypeVariable <|> (pSqlValue |>> BoundValue) // ここはpSqlValueじゃなくて、pSqlTypeか？
 
-  let pOpenTypeParam typeName =
-    if typeName = "nullable" then
-      pNullableParam
-    else
-      sepBy pOpenTypeParamElem (pSkipToken ",") |> between (pchar '(') (pchar ')')
+  type TypeParams =
+    | NullableTypeParam of ColumnTypeDef
+    | TypeParams of OpenTypeParam list
+
+  let pOpenTypeParam = function
+  | "nullable" ->
+      pNullableParam |>> NullableTypeParam
+  | _ ->
+      sepBy pOpenTypeParamElem (pSkipToken ",")
+      |> between (pchar '(') (pchar ')')
+      |>> TypeParams
 
   let expandAttr' replacingMap = function
   | Var v ->
@@ -88,19 +94,13 @@ module internal Impl =
 
   let pClosedTypeRefWithoutAttributes = parse {
     let! typeName = pName
-    let! typeParams = opt (attempt (pOpenTypeParam typeName))
-    let typeParams =
-      match typeParams with
-      | None -> []
-      | Some x -> x
-    let! env = getUserState
-    if typeName = "nullable" then
-      match typeParams with
-      | [BoundType t] -> return (t, true)
-      | other -> return! failFatally (sprintf "nullableには一つしか型パラメータを指定できません。: %A" other)
-    else
-      let! typ = resolveType typeName typeParams env
-      return (typ, false)
+    let! typeParams = (attempt (pOpenTypeParam typeName)) <|> preturn (TypeParams [])
+    match typeParams with
+    | NullableTypeParam t -> return (t, true)
+    | TypeParams ps ->
+        let! env = getUserState
+        let! typ = resolveType typeName ps env
+        return (typ, false)
   }
 
   pOpenTypeRefWithoutAttributesRef := parse {
@@ -208,7 +208,6 @@ module internal Impl =
     | [] -> None
 
     option {
-      let! xs = xs
       let! dup = tryFindDup [] xs
       return failFatally (sprintf "型%sの定義で型変数%sが重複しています。" name dup)
     }
@@ -217,12 +216,10 @@ module internal Impl =
     let! colTypeSummary = pSummaryOpt
     do! pSkipToken "coltype"
     let! colTypeName = pColTypeName
-    let! colTypeParams = pTypeParams |> attempt |> opt
+    let! colTypeParams = (attempt pTypeParams) <|> preturn []
     do! match checkColTypeParams colTypeName colTypeParams with Some p -> p | None -> preturn ()
     let colTypeParams =
-      colTypeParams
-      |> function Some x -> x | _ -> []
-      |> List.map (fun p -> TypeVariable p)
+      colTypeParams |> List.map (fun p -> TypeVariable p)
     let! colTypeJpName = pJpNameOpt
     do! pSkipToken "="
     let! typ, attrs = pTypeDef colTypeName colTypeParams

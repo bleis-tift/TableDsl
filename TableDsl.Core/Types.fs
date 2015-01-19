@@ -37,7 +37,6 @@ with
 type OpenTypeParam =
   | TypeVariable of string
   | BoundValue of string
-  | BoundType of ColumnTypeDef
 with
   override this.ToString() = sprintf "%A" this
  

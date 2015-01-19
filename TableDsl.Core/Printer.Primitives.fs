@@ -19,14 +19,13 @@ module internal Primitives =
   | Some jpName -> "[" + jpName + "]"
   | None -> ""
 
-  let printOpenTypeParam typePrinter = function
-  | TypeVariable v -> v
+  let printOpenTypeParam = function
+  | TypeVariable v
   | BoundValue v -> v
-  | BoundType t -> typePrinter t
 
-  let printOpenTypeParams typePrinter = function
+  let printOpenTypeParams = function
   | [] -> ""
-  | typeVars -> "(" + (typeVars |> List.map (printOpenTypeParam typePrinter) |> Str.join ", ") + ")"
+  | typeVars -> "(" + (typeVars |> List.map printOpenTypeParam |> Str.join ", ") + ")"
 
   let printAttributeValue attrValueElems =
     let printAttrValueElem = function
