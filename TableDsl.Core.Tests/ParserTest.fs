@@ -650,3 +650,58 @@ module ParserTest =
                     ]
                 }
             ]
+
+    [<Test>]
+    let ``nested enum`` () =
+      """
+      /// プラットフォーム
+      coltype Platform[プラットフォーム] =
+        | iOS = 1
+        | Android = 2
+        | Etc = 99
+      based { int with default = 99 }
+
+      coltype Platform2 = { Platform with default = 1 }
+
+      /// 端末テーブル
+      table Devices[端末] = {
+        /// ID
+        Id[ID]: int
+        /// 種別
+        _: Platform2
+      }"""
+      |> parse
+      |> List.filter (function TableDef _ -> true | _ -> false)
+      |> should equal
+            [ TableDef
+                { TableDefSummary = Some "端末テーブル"
+                  TableDefAttributes = []
+                  TableDefName = "Devices"
+                  TableDefJpName = Some "端末"
+                  ColumnDefs = 
+                    [
+                      { ColumnDefSummary = Some "ID" 
+                        ColumnDefName = ColumnName ("Id", Some "ID")
+                        ColumnDefType = { Ref = NonEnum { RootType = "int"
+                                                          ColumnTypeRefSummary = None
+                                                          ColumnTypeRefJpName = None
+                                                          ColumnTypeRefAttributes = [] }
+                                          IsNullable = false
+                                          ColumnTypeName = "int"
+                                          ColumnTypeParams = []
+                                          ColumnTypeAttributes = [] } }
+                      { ColumnDefSummary = Some "種別" 
+                        ColumnDefName = Wildcard
+                        ColumnDefType = { Ref = Enum ({ RootType = "int"
+                                                        ColumnTypeRefSummary = Some "プラットフォーム"
+                                                        ColumnTypeRefJpName = Some "プラットフォーム"
+                                                        ColumnTypeRefAttributes =
+                                                           [ ComplexAttr ("default", ["1"]) ] },
+                                                      [("iOS", None, "1"); ("Android", None, "2"); ("Etc", None, "99")])
+                                          IsNullable = false
+                                          ColumnTypeName = "Platform2"
+                                          ColumnTypeParams = []
+                                          ColumnTypeAttributes = [] } }
+                    ]
+                }
+            ]

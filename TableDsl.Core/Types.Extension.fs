@@ -86,7 +86,9 @@ type ColumnTypeRefKind with
     match colTypeDef.ColumnTypeDef with
     | BuiltinType _ -> NonEnum (ColumnTypeRef.Create(name, summary, jpName, attrs))
     | AliasDef (_, org) ->
-        NonEnum (ColumnTypeRef.Create(name, summary, jpName, attrs))
+        match ColumnTypeRefKind.FromColumnTypeDef(org) with
+        | NonEnum _ -> NonEnum (ColumnTypeRef.Create(name, summary, jpName, attrs))
+        | Enum (_, cases) -> Enum (ColumnTypeRef.Create(name, summary, jpName, attrs), cases)
     | EnumTypeDef t -> Enum (ColumnTypeRef.Create(name, summary, jpName, attrs), t.Cases)
 
 type ColumnType with
