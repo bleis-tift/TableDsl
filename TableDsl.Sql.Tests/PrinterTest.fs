@@ -235,6 +235,25 @@ module PrinterTest =
                        [Name] DESC
                      , [Age]
                    );""" }
+      // 複数のINDEX
+      { Input = """
+                table Users = {
+                  Id: int
+                  Name: { nvarchar(16) with index }
+                  Age: { int with index }
+                }"""
+        Expected = """
+                   CREATE TABLE [Users] (
+                       [Id] int NOT NULL
+                     , [Name] nvarchar(16) NOT NULL
+                     , [Age] int NOT NULL
+                   );
+                   CREATE NONCLUSTERED INDEX [IX_Users] ON [Users] (
+                       [Name]
+                   );
+                   CREATE NONCLUSTERED INDEX [IX_Users_2] ON [Users] (
+                       [Age]
+                   );""" }
       // UNIQUE制約
       { Input = """
                 table Users = {
