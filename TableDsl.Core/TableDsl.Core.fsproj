@@ -57,6 +57,8 @@
     <Compile Include="Types.fs" />
     <Compile Include="Types.Extension.fs" />
     <Compile Include="Types.Module.fs" />
+    <Compile Include="Key.Types.fsi" />
+    <Compile Include="Key.Types.fs" />
     <Compile Include="Parser.Types.fs" />
     <Compile Include="Parser.Primitives.fs" />
     <Compile Include="Parser.Impl.fs" />
