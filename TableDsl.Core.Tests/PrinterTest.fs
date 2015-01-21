@@ -11,7 +11,7 @@ module PrinterTest =
   [<Test>]
   let ``print empty list`` () =
     []
-    |> Printer.print
+    |> Printer.printElems
     |> should equal ""
 
   let trimAndCountIndent (str: string) =
@@ -122,7 +122,7 @@ module PrinterTest =
 
   [<TestCaseSource("source")>]
   let tests str =
-    let printed = str |> Parser.parse |> Printer.print
+    let printed = str |> Parser.parse |> Printer.printElems
 
     printed |> Parser.parse
     |> should equal (str |> Parser.parse)
