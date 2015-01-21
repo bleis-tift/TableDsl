@@ -40,7 +40,7 @@ module Printer =
     "    " + (cols |> List.map (fun col -> "[" + col + "]") |> Str.join "\n  , ")
 
   let printKeyCols (cols: SingleTableKeyColumn list) =
-    "    " + (cols |> List.map (fun col -> "[" + col.Name + "]") |> Str.join "\n  , ")
+    "    " + (cols |> List.map (fun col -> "[" + col.Name + "]" + match col.LayoutOrder with Desc -> " DESC" | _ -> "") |> Str.join "\n  , ")
 
   let printFKOwnCols (cols: ColumnPair list) =
     "    " + (cols |> List.map (fun col -> "[" + col.OwnColumnName + "]") |> Str.join "\n  , ")
